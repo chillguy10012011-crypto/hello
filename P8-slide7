@@ -1,0 +1,63 @@
+local Slide7 = createSlide("Test")
+
+local ResetAllBtn = createStyledButton(Slide7, "Reset all / Stop all", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 40))
+ResetAllBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+
+ResetAllBtn.MouseButton1Click:Connect(function()
+    for _, resetFunc in ipairs(resetCallbacks) do
+        resetFunc()
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character then
+            local hl = p.Character:FindFirstChild("CustomESPHighlight")
+            if hl then hl:Destroy() end
+            
+            local head = p.Character:FindFirstChild("Head")
+            if head then
+                local billboard = head:FindFirstChild("CustomNameBillboard")
+                if billboard then billboard:Destroy() end
+            end
+        end
+    end
+
+    if clearTracers then
+        clearTracers()
+    end
+
+    local char = LocalPlayer.Character
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        
+        if hrp then
+            local flyBv = hrp:FindFirstChild("FlyVelocity")
+            local flyBg = hrp:FindFirstChild("FlyGyro")
+            local airBv = hrp:FindFirstChild("AirWalkVelocity")
+            if flyBv then flyBv:Destroy() end
+            if flyBg then flyBg:Destroy() end
+            if airBv then airBv:Destroy() end
+        end
+
+        if humanoid then
+            humanoid.PlatformStand = false
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Stunned, true)
+            humanoid.WalkSpeed = 16
+        end
+
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+
+    local floor = Workspace:FindFirstChild("CustomInvisibleFloor")
+    if floor then floor:Destroy() end
+
+    if updateXrayState then
+        updateXrayState()
+    end
+end)
