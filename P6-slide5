@@ -1,0 +1,175 @@
+local Slide5 = createSlide("Setting")
+
+local StyleLabel = Instance.new("TextLabel")
+StyleLabel.Size = UDim2.new(0.95, 0, 0, 18)
+StyleLabel.Position = UDim2.new(0.025, 0, 0, 10)
+StyleLabel.BackgroundTransparency = 1
+StyleLabel.Text = "Kiểu dáng GUI (GUI Style):"
+StyleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+StyleLabel.Font = Enum.Font.SourceSansBold
+StyleLabel.TextSize = 13
+StyleLabel.TextXAlignment = Enum.TextXAlignment.Left
+StyleLabel.Parent = Slide5
+
+table.insert(registeredTexts, StyleLabel)
+
+local StyleFrame = Instance.new("Frame")
+StyleFrame.Size = UDim2.new(0.95, 0, 0, 28)
+StyleFrame.Position = UDim2.new(0.025, 0, 0, 30)
+StyleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+StyleFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+StyleFrame.BorderSizePixel = 1
+StyleFrame.Parent = Slide5
+
+table.insert(registeredBorders, StyleFrame)
+
+local DefaultStyleBtn = createStyledButton(StyleFrame, "Mặc định", UDim2.new(0.01, 0, 0.08, 0), UDim2.new(0.48, 0, 0.84, 0))
+local Gui1StyleBtn = createStyledButton(StyleFrame, "GUI 1", UDim2.new(0.51, 0, 0.08, 0), UDim2.new(0.48, 0, 0.84, 0))
+
+DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+
+DefaultStyleBtn.MouseButton1Click:Connect(function()
+    DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    Gui1StyleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    setGuiStyle("Default")
+end)
+
+Gui1StyleBtn.MouseButton1Click:Connect(function()
+    Gui1StyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    setGuiStyle("GUI1")
+end)
+
+local currentScale = 2
+
+local ScaleLbl = createStyledTextBox(Slide5, "", UDim2.new(0.025, 0, 0, 68), UDim2.new(0.95, 0, 0, 22))
+ScaleLbl.Text = "Kích thước GUI: 2"
+ScaleLbl.TextColor3 = Color3.fromRGB(0, 170, 255)
+
+local GuiSliderFrame = Instance.new("Frame")
+GuiSliderFrame.Size = UDim2.new(0.95, 0, 0, 15)
+GuiSliderFrame.Position = UDim2.new(0.025, 0, 0, 94)
+GuiSliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+GuiSliderFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+GuiSliderFrame.BorderSizePixel = 1
+GuiSliderFrame.Parent = Slide5
+
+table.insert(registeredBorders, GuiSliderFrame)
+
+local GuiSliderFill = Instance.new("Frame")
+GuiSliderFill.Size = UDim2.new((2 - 1) / (4 - 1), 0, 1, 0)
+GuiSliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+GuiSliderFill.BorderSizePixel = 0
+GuiSliderFill.Parent = GuiSliderFrame
+
+local isDraggingGuiSlider = false
+
+local function updateGuiScale(val)
+    val = math.clamp(val, 1, 4)
+    currentScale = math.floor(val * 10 + 0.5) / 10
+    GuiSliderFill.Size = UDim2.new((currentScale - 1) / 3, 0, 1, 0)
+    ScaleLbl.Text = "Kích thước GUI: " .. tostring(currentScale)
+    MainFrame.Size = UDim2.new(0, baseWidth * currentScale, 0, baseHeight * currentScale)
+end
+
+local function updateGuiSliderFromInput(input)
+    local relativeX = input.Position.X - GuiSliderFrame.AbsolutePosition.X
+    local pct = math.clamp(relativeX / GuiSliderFrame.AbsoluteSize.X, 0, 1)
+    local val = 1 + (pct * 3)
+    updateGuiScale(val)
+end
+
+GuiSliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingGuiSlider = true
+        updateGuiSliderFromInput(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDraggingGuiSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateGuiSliderFromInput(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingGuiSlider = false
+    end
+end)
+
+ScaleLbl.FocusLost:Connect(function()
+    local num = tonumber(ScaleLbl.Text:match("%d+%.?%d*"))
+    if num then
+        updateGuiScale(num)
+    else
+        ScaleLbl.Text = "Kích thước GUI: " .. tostring(currentScale)
+    end
+end)
+
+local colorList = {
+    Color3.fromRGB(35, 35, 35), Color3.fromRGB(20, 20, 20), Color3.fromRGB(50, 50, 50),
+    Color3.fromRGB(0, 170, 255), Color3.fromRGB(255, 85, 85), Color3.fromRGB(85, 255, 85),
+    Color3.fromRGB(255, 255, 85), Color3.fromRGB(170, 85, 255), Color3.fromRGB(255, 170, 0),
+    Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 105, 180)
+}
+
+local function createColorPaletteSection(titleText, posY, onSelectColor)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0.95, 0, 0, 18)
+    lbl.Position = UDim2.new(0.025, 0, 0, posY)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = titleText
+    lbl.TextColor3 = Color3.fromRGB(0, 170, 255)
+    lbl.Font = Enum.Font.SourceSansBold
+    lbl.TextSize = 13
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = Slide5
+
+    table.insert(registeredTexts, lbl)
+
+    local paletteFrame = Instance.new("Frame")
+    paletteFrame.Size = UDim2.new(0.95, 0, 0, 32)
+    paletteFrame.Position = UDim2.new(0.025, 0, 0, posY + 20)
+    paletteFrame.BackgroundTransparency = 1
+    paletteFrame.Parent = Slide5
+
+    local grid = Instance.new("UIGridLayout")
+    grid.CellSize = UDim2.new(0, 18, 0, 14)
+    grid.CellPadding = UDim2.new(0, 4, 0, 4)
+    grid.Parent = paletteFrame
+
+    for _, color in ipairs(colorList) do
+        local cBtn = Instance.new("TextButton")
+        cBtn.BackgroundColor3 = color
+        cBtn.BorderSizePixel = 1
+        cBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+        cBtn.Text = ""
+        cBtn.Parent = paletteFrame
+
+        cBtn.MouseButton1Click:Connect(function()
+            onSelectColor(color)
+        end)
+    end
+end
+
+createColorPaletteSection("1. Chọn màu nền GUI:", 120, function(color)
+    applyTheme(color, nil, nil)
+end)
+
+createColorPaletteSection("2. Chọn màu viền GUI:", 180, function(color)
+    applyTheme(nil, color, nil)
+end)
+
+createColorPaletteSection("3. Chọn màu chữ GUI:", 240, function(color)
+    applyTheme(nil, nil, color)
+end)
+
+local ResetColorBtn = createStyledButton(Slide5, "Khôi phục màu mặc định", UDim2.new(0.025, 0, 0, 300), UDim2.new(0.95, 0, 0, 28))
+ResetColorBtn.MouseButton1Click:Connect(function()
+    applyTheme(
+        Color3.fromRGB(35, 35, 35),
+        Color3.fromRGB(0, 170, 255),
+        Color3.fromRGB(255, 255, 255)
+    )
+end)
