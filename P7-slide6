@@ -1,0 +1,241 @@
+local Slide6 = createSlide("Move")
+
+-- 1. NÚT FLY (BAY TỰ DO TRÊN MOBILE VÀ PC)
+local flyToggle = false
+local flySpeed = 50
+local flyConnection = nil
+
+createKeybindButton(Slide6, "Fly (Bay tự do)", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 35), nil, function(state)
+    flyToggle = state
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+    if flyToggle and hrp and humanoid then
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlyVelocity"
+        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bv.Velocity = Vector3.zero
+        bv.Parent = hrp
+
+        local bg = Instance.new("BodyGyro")
+        bg.Name = "FlyGyro"
+        bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+        bg.P = 9e4
+        bg.CFrame = hrp.CFrame
+        bg.Parent = hrp
+
+        humanoid.PlatformStand = true
+
+        flyConnection = RunService.RenderStepped:Connect(function()
+            if not flyToggle or not hrp or not hrp.Parent then
+                if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+                return
+            end
+
+            local camera = Workspace.CurrentCamera
+            local moveVector = humanoid.MoveDirection
+
+            bg.CFrame = camera.CFrame
+
+            if moveVector.Magnitude > 0 then
+                local cameraCFrame = camera.CFrame
+                local forwardVector = cameraCFrame.LookVector
+                local rightVector = cameraCFrame.RightVector
+
+                local dotForward = moveVector:Dot(cameraCFrame.LookVector)
+                local dotRight = moveVector:Dot(cameraCFrame.RightVector)
+
+                local flyDirection = (forwardVector * dotForward) + (rightVector * dotRight)
+                if flyDirection.Magnitude > 0 then
+                    flyDirection = flyDirection.Unit
+                end
+
+                bv.Velocity = flyDirection * flySpeed
+            else
+                bv.Velocity = Vector3.zero
+            end
+        end)
+    else
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
+        if hrp then
+            local oldBv = hrp:FindFirstChild("FlyVelocity")
+            local oldBg = hrp:FindFirstChild("FlyGyro")
+            if oldBv then oldBv:Destroy() end
+            if oldBg then oldBg:Destroy() end
+        end
+        if humanoid then
+            humanoid.PlatformStand = false
+        end
+    end
+end)
+
+-- 2. NÚT NOCLIP + SÀN GIẢ TÀNG HÌNH
+local noClipToggle = false
+local noClipConnection = nil
+local fakeFloor = nil
+local fixedY = nil
+
+createKeybindButton(Slide6, "NoClip (Xuyên tường + Sàn giả)", UDim2.new(0.025, 0, 0, 65), UDim2.new(0.95, 0, 0, 35), nil, function(state)
+    noClipToggle = state
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    if noClipToggle then
+        if hrp then
+            fixedY = hrp.Position.Y - 3.2
+        end
+
+        if not fakeFloor or not fakeFloor.Parent then
+            fakeFloor = Instance.new("Part")
+            fakeFloor.Name = "CustomInvisibleFloor"
+            fakeFloor.Size = Vector3.new(8, 1, 8)
+            fakeFloor.Transparency = 1
+            fakeFloor.Anchored = true
+            fakeFloor.CanCollide = true
+            fakeFloor.Parent = Workspace
+        end
+
+        noClipConnection = RunService.Stepped:Connect(function()
+            local currentChar = LocalPlayer.Character
+            local currentHrp = currentChar and currentChar:FindFirstChild("HumanoidRootPart")
+            local humanoid = currentChar and currentChar:FindFirstChildOfClass("Humanoid")
+
+            if currentChar and noClipToggle then
+                for _, part in pairs(currentChar:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "CustomInvisibleFloor" then
+                        part.CanCollide = false
+                    end
+                end
+
+                if currentHrp and fakeFloor then
+                    if humanoid and humanoid.Jump then
+                        fixedY = currentHrp.Position.Y - 1.5
+                    end
+                    fakeFloor.CFrame = CFrame.new(currentHrp.Position.X, fixedY, currentHrp.Position.Z)
+                end
+            end
+        end)
+    else
+        if noClipConnection then
+            noClipConnection:Disconnect()
+            noClipConnection = nil
+        end
+        if fakeFloor then
+            fakeFloor:Destroy()
+            fakeFloor = nil
+        end
+        fixedY = nil
+    end
+end)
+
+-- 3. NÚT ANTIFLING
+local antiFlingToggle = false
+local antiFlingConnection = nil
+
+createKeybindButton(Slide6, "AntiFling (Chống văng chuẩn)", UDim2.new(0.025, 0, 0, 110), UDim2.new(0.95, 0, 0, 35), nil, function(state)
+    antiFlingToggle = state
+
+    if antiFlingToggle then
+        if not antiFlingConnection then
+            antiFlingConnection = RunService.Heartbeat:Connect(function()
+                if not antiFlingToggle then return end
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    if hrp.RotVelocity.Magnitude > 75 or hrp.Velocity.Magnitude > 500 then
+                        hrp.RotVelocity = Vector3.new(0, 0, 0)
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end
+            end)
+        end
+    else
+        if antiFlingConnection then
+            antiFlingConnection:Disconnect()
+            antiFlingConnection = nil
+        end
+    end
+end)
+
+-- 4. NÚT AIR WALK
+local airWalkToggle = false
+local airWalkSpeed = 50
+local airWalkConnection = nil
+local airWalkBv = nil
+
+createKeybindButton(Slide6, "Đi trên không (Air Walk)", UDim2.new(0.025, 0, 0, 155), UDim2.new(0.95, 0, 0, 35), nil, function(state)
+    airWalkToggle = state
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    if airWalkToggle and hrp then
+        airWalkBv = Instance.new("BodyVelocity")
+        airWalkBv.Name = "AirWalkVelocity"
+        airWalkBv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        airWalkBv.Velocity = Vector3.zero
+        airWalkBv.Parent = hrp
+
+        airWalkConnection = RunService.RenderStepped:Connect(function()
+            if hrp and airWalkBv then
+                local cam = Workspace.CurrentCamera
+                local moveDir = Vector3.zero
+
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
+                airWalkBv.Velocity = moveDir * airWalkSpeed
+            end
+        end)
+    else
+        if airWalkConnection then airWalkConnection:Disconnect() airWalkConnection = nil end
+        if airWalkBv then airWalkBv:Destroy() airWalkBv = nil end
+    end
+end)
+
+-- 5. NÚT TỐC BIẾN (PHÍM R)
+local flashStepToggle = false
+local flashStepDistance = 100
+
+local function getMouseTargetPosition()
+    local mousePos = UserInputService:GetMouseLocation()
+    local ray = Workspace.CurrentCamera:ScreenPointToRay(mousePos.X, mousePos.Y)
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    if LocalPlayer.Character then
+        raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    end
+
+    local result = Workspace:Raycast(ray.Origin, ray.Direction * flashStepDistance, raycastParams)
+    if result then
+        return result.Position
+    else
+        return ray.Origin + (ray.Direction * flashStepDistance)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if flashStepToggle and input.KeyCode == Enum.KeyCode.R then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if hrp then
+            local targetPos = getMouseTargetPosition()
+            hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2.5, 0), targetPos)
+        end
+    end
+end)
+
+createKeybindButton(Slide6, "Tốc biến [Phím R]", UDim2.new(0.025, 0, 0, 200), UDim2.new(0.95, 0, 0, 35), Enum.KeyCode.R, function(state)
+    flashStepToggle = state
+end)
