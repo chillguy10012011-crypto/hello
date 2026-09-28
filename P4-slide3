@@ -1,0 +1,15 @@
+local Slide3 = createSlide("Script Hub")
+
+local LT2Btn = createStyledButton(Slide3, "Chạy Script Kron Hub", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 35))
+LT2Btn.MouseButton1Click:Connect(function()
+    pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/DevKron/Kron_Hub/refs/heads/main/version_1.0'))()
+    end)
+end)
+
+local IYBtn = createStyledButton(Slide3, "Chạy Script Infinite Yield", UDim2.new(0.025, 0, 0, 65), UDim2.new(0.95, 0, 0, 35))
+IYBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end)
+end)
