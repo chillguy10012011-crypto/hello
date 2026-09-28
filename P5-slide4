@@ -1,0 +1,50 @@
+local Slide4 = createSlide(" spawn model ")
+
+local SpawnBox = createStyledTextBox(Slide4, "Nhập tên Model...", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 30))
+
+local SpawnUnanchoredBtn = createStyledButton(Slide4, "Triệu hồi (Có tác động lực)", UDim2.new(0.025, 0, 0, 60), UDim2.new(0.95, 0, 0, 30))
+local SpawnAnchoredBtn = createStyledButton(Slide4, "Triệu hồi (Không tác động lực)", UDim2.new(0.025, 0, 0, 100), UDim2.new(0.95, 0, 0, 30))
+local DeleteModelBtn = createStyledButton(Slide4, "Xóa toàn bộ Model theo tên", UDim2.new(0.025, 0, 0, 140), UDim2.new(0.95, 0, 0, 30))
+
+local function spawnModelLogic(isAnchored)
+    local name = SpawnBox.Text
+    if name == "" then return end
+    
+    local char = LocalPlayer.Character
+    local spawnPos = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5) or CFrame.new(0, 10, 0)
+
+    local newModel = Instance.new("Model")
+    newModel.Name = name
+
+    local part = Instance.new("Part")
+    part.Name = "MainPart"
+    part.Size = Vector3.new(4, 4, 4)
+    part.CFrame = spawnPos
+    part.Anchored = isAnchored
+    part.CanCollide = true
+    part.Material = Enum.Material.SmoothPlastic
+    part.Color = Color3.fromRGB(0, 170, 255)
+    part.Parent = newModel
+
+    newModel.PrimaryPart = part
+    newModel.Parent = Workspace
+end
+
+SpawnUnanchoredBtn.MouseButton1Click:Connect(function()
+    spawnModelLogic(false)
+end)
+
+SpawnAnchoredBtn.MouseButton1Click:Connect(function()
+    spawnModelLogic(true)
+end)
+
+DeleteModelBtn.MouseButton1Click:Connect(function()
+    local name = SpawnBox.Text
+    if name == "" then return end
+    
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == name then
+            obj:Destroy()
+        end
+    end
+end)
