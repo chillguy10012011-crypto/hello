@@ -1,0 +1,40 @@
+-- Danh sách các link chứa các loadstring nhỏ của bạn
+local moduleLinks = {
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P1-GUI",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/Testlinkslide",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P3-slide2 (Fix lag)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P4-slide3 (Script Hub)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P5-slide4 (Spawn model)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P6-slide5 (Setting)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P7-slide6 (Move)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P8-slide7 (Test)"
+}
+
+local compiledCode = ""
+
+-- Tải và gom tất cả nội dung từ các loadstring nhỏ lại với nhau
+for index, link in ipairs(moduleLinks) do
+    local success, response = pcall(function()
+        return game:HttpGet(link)
+    end)
+    
+    if success and response then
+        -- Ghép code lại với một dòng chú thích phân tách
+        compiledCode = compiledCode .. "\n-- // Phần " .. index .. " //\n" .. response
+    else
+        warn("Không thể tải loadstring phần số " .. index)
+    end
+end
+
+-- Thực thi toàn bộ đoạn code hoàn chỉnh sau khi đã ghép
+if compiledCode ~= "" then
+    local runFunc, err = loadstring(compiledCode)
+    if runFunc then
+        local success, execErr = pcall(runFunc)
+        if not success then
+            warn("Lỗi khi chạy code tổng: " .. tostring(execErr))
+        end
+    else
+        warn("Lỗi biên dịch code tổng: " .. tostring(err))
+    end
+end
