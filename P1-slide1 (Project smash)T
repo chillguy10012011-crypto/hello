@@ -1,0 +1,158 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+
+local SLIDER_MAX = 200
+local INPUT_MAX = 500
+local DEFAULT_SPEED = 16
+
+local speedEnabled = false
+local speedValue = DEFAULT_SPEED
+local originalSpeed = DEFAULT_SPEED
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "SpeedGui"
+gui.ResetOnSpawn = false
+local ok, parent = pcall(function() return gethui() end)
+gui.Parent = ok and parent or lp:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 190, 0, 140)
+frame.Position = UDim2.new(0.5, -95, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", frame)
+
+-- Thanh tiêu đề (kéo GUI)
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 24)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Text = "Speed (kéo ở đây)"
+Instance.new("UICorner", title)
+
+do
+    local dragging, dragStart, startPos
+    title.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = i.Position
+            startPos = frame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+-- Ô nhập tốc độ
+local box = Instance.new("TextBox", frame)
+box.Size = UDim2.new(1, -16, 0, 26)
+box.Position = UDim2.new(0, 8, 0, 32)
+box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+box.TextColor3 = Color3.new(1, 1, 1)
+box.PlaceholderText = "Nhập tốc độ"
+box.Font = Enum.Font.Gotham
+box.TextSize = 14
+box.ClearTextOnFocus = false
+Instance.new("UICorner", box)
+
+-- Thanh kéo
+local track = Instance.new("Frame", frame)
+track.Size = UDim2.new(1, -16, 0, 12)
+track.Position = UDim2.new(0, 8, 0, 70)
+track.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+local fill = Instance.new("Frame", track)
+fill.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
+Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+local knob = Instance.new("Frame", track)
+knob.Size = UDim2.new(0, 16, 0, 16)
+knob.AnchorPoint = Vector2.new(0.5, 0.5)
+knob.BackgroundColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+local function setSpeed(v)
+    v = math.floor(math.clamp(v, 0, INPUT_MAX) + 0.5)
+    speedValue = v
+    local ratio = math.clamp(v / SLIDER_MAX, 0, 1)
+    fill.Size = UDim2.new(ratio, 0, 1, 0)
+    knob.Position = UDim2.new(ratio, 0, 0.5, 0)
+    box.Text = tostring(v)
+end
+setSpeed(speedValue)
+
+box.FocusLost:Connect(function()
+    local n = tonumber(box.Text)
+    if n then setSpeed(n) else box.Text = tostring(speedValue) end
+end)
+
+do
+    local sliding = false
+    local function update(i)
+        local ratio = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        setSpeed(ratio * SLIDER_MAX)
+    end
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            sliding = true
+            update(i)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if sliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            update(i)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
+        end
+    end)
+end
+
+-- Nút bật/tắt
+local speedBtn = Instance.new("TextButton", frame)
+speedBtn.Size = UDim2.new(1, -16, 0, 30)
+speedBtn.Position = UDim2.new(0, 8, 0, 96)
+speedBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+speedBtn.TextColor3 = Color3.new(1, 1, 1)
+speedBtn.Font = Enum.Font.GothamBold
+speedBtn.TextSize = 16
+speedBtn.Text = "Speed: OFF"
+Instance.new("UICorner", speedBtn)
+
+speedBtn.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
+    speedBtn.Text = "Speed: " .. (speedEnabled and "ON" or "OFF")
+    speedBtn.BackgroundColor3 = speedEnabled and Color3.fromRGB(50, 170, 80) or Color3.fromRGB(200, 50, 50)
+
+    local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
+    if speedEnabled then
+        if hum then originalSpeed = hum.WalkSpeed end
+    elseif hum then
+        hum.WalkSpeed = originalSpeed
+    end
+end)
+
+-- Áp dụng tốc độ mỗi frame
+RunService.Heartbeat:Connect(function()
+    if not speedEnabled then return end
+    local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = speedValue
+    end
+end)
