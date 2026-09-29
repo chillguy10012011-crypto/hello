@@ -1,4 +1,3 @@
--- // KHỞI TẠO SLIDE 1 //
 local Slide1 = createSlide("Project smash")
 Slide1.Visible = true
 
@@ -6,7 +5,6 @@ local selectedPlayerName = ""
 local modeOption = 1
 local targetDistance = 4
 
--- // 1. KHUNG CHỌN NGƯỜI CHƠI //
 local SelectedLbl = Instance.new("TextLabel")
 SelectedLbl.Size = UDim2.new(0.95, 0, 0, 25)
 SelectedLbl.Position = UDim2.new(0.025, 0, 0, 10)
@@ -68,7 +66,6 @@ Players.PlayerRemoving:Connect(updatePlayerList)
 
 local InputNameBox1 = createStyledTextBox(Slide1, "Nhập Username...", UDim2.new(0.025, 0, 0, 130), UDim2.new(0.95, 0, 0, 28))
 
--- // 2. CHẾ ĐỘ //
 local ModeFrame = Instance.new("Frame")
 ModeFrame.Size = UDim2.new(0.95, 0, 0, 30)
 ModeFrame.Position = UDim2.new(0.025, 0, 0, 163)
@@ -95,7 +92,6 @@ Mode2Btn.MouseButton1Click:Connect(function()
     Mode1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 end)
 
--- // 3. CÁC TÍNH NĂNG TOGGLE / KEYBIND //
 local LockAimToggle = false
 createKeybindButton(Slide1, "Nhìn người gần nhất", UDim2.new(0.025, 0, 0, 198), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     LockAimToggle = state
@@ -106,32 +102,6 @@ createKeybindButton(Slide1, "Đứng sau target", UDim2.new(0.025, 0, 0, 231), U
     StandBehindToggle = state
 end)
 
--- Chống giảm tốc
-local AntiSlowToggle = false
-local antiSlowConnection = nil
-local antiSlowDefaultSpeed = 16
-
-createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    AntiSlowToggle = state
-    if AntiSlowToggle then
-        if not antiSlowConnection then
-            antiSlowConnection = RunService.RenderStepped:Connect(function()
-                local character = LocalPlayer.Character
-                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid.WalkSpeed < antiSlowDefaultSpeed then
-                    humanoid.WalkSpeed = antiSlowDefaultSpeed
-                end
-            end)
-        end
-    else
-        if antiSlowConnection then
-            antiSlowConnection:Disconnect()
-            antiSlowConnection = nil
-        end
-    end
-end)
-
--- ESP
 local EspToggle = false
 local function updateESP()
     for _, p in pairs(Players:GetPlayers()) do
@@ -158,12 +128,37 @@ local function updateESP()
     end
 end
 
+-- // CHỐNG GIẢM TỐC
+local AntiSlowToggle = false
+local antiSlowConnection = nil
+local antiSlowDefaultSpeed = 16
+
+createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AntiSlowToggle = state
+
+    if AntiSlowToggle then
+        if not antiSlowConnection then
+            antiSlowConnection = RunService.RenderStepped:Connect(function()
+                local character = LocalPlayer.Character
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.WalkSpeed < antiSlowDefaultSpeed then
+                    humanoid.WalkSpeed = antiSlowDefaultSpeed
+                end
+            end)
+        end
+    else
+        if antiSlowConnection then
+            antiSlowConnection:Disconnect()
+            antiSlowConnection = nil
+        end
+    end
+end)
+
 createKeybindButton(Slide1, "Esp", UDim2.new(0.025, 0, 0, 297), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     EspToggle = state
     updateESP()
 end)
 
--- Tracer
 local TracerToggle = false
 local tracerDrawings = {}
 
@@ -246,7 +241,6 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
--- Show Name
 local ShowNameToggle = false
 local function updateNames()
     for _, p in pairs(Players:GetPlayers()) do
@@ -287,7 +281,6 @@ createKeybindButton(Slide1, "Show Name", UDim2.new(0.025, 0, 0, 363), UDim2.new(
     updateNames()
 end)
 
--- // 4. X-RAY & CÀI ĐẶT ĐỘ MỜ //
 local xrayTransparencyPct = 50
 local XrayToggle = false
 local originalTranspMap = {}
@@ -413,7 +406,6 @@ createKeybindButton(Slide1, "X-ray", UDim2.new(0.025, 0, 0, 444), UDim2.new(0.95
     end
 end)
 
--- // 5. KHOẢNG CÁCH TARGET & SLIDER //
 local DistBox = createStyledTextBox(Slide1, "4", UDim2.new(0.025, 0, 0, 477), UDim2.new(0.95, 0, 0, 22))
 DistBox.Text = "Khoảng cách: 4 studs (Nhấn để chỉnh)"
 DistBox.TextColor3 = Color3.fromRGB(0, 170, 255)
@@ -477,102 +469,7 @@ DistBox.FocusLost:Connect(function()
         DistBox.Text = "Khoảng cách: " .. tostring(targetDistance) .. " studs (Nhấn để chỉnh)"
     end
 end)
--- // 6. TÍNH NĂNG TỐC ĐỘ (SPEED MODIFIER & SLIDER) //
-local speedToggleState = false
-local currentCustomSpeed = 16
-local speedConnection = nil
 
-local SpeedBox = createStyledTextBox(Slide1, "16", UDim2.new(0.025, 0, 0, 537), UDim2.new(0.95, 0, 0, 22))
-SpeedBox.Text = "Tốc độ: 16 (Nhấn để chỉnh)"
-SpeedBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-
-local SpeedSliderFrame = Instance.new("Frame")
-SpeedSliderFrame.Size = UDim2.new(0.95, 0, 0, 15)
-SpeedSliderFrame.Position = UDim2.new(0.025, 0, 0, 564)
-SpeedSliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SpeedSliderFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
-SpeedSliderFrame.BorderSizePixel = 1
-SpeedSliderFrame.Parent = Slide1
-
-table.insert(registeredBorders, SpeedSliderFrame)
-
-local SpeedSliderFill = Instance.new("Frame")
-SpeedSliderFill.Size = UDim2.new(16 / 100, 0, 1, 0)
-SpeedSliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-SpeedSliderFill.BorderSizePixel = 0
-SpeedSliderFill.Parent = SpeedSliderFrame
-
-local isDraggingSpeedSlider = false
-
-local function updateSpeedFromValue(val)
-    val = math.clamp(val, 0, 100)
-    currentCustomSpeed = math.floor(val * 10 + 0.5) / 10
-    SpeedSliderFill.Size = UDim2.new(currentCustomSpeed / 100, 0, 1, 0)
-    SpeedBox.Text = "Tốc độ: " .. tostring(currentCustomSpeed) .. " (Nhấn để chỉnh)"
-end
-
-local function updateSpeedFromInput(input)
-    local relativeX = input.Position.X - SpeedSliderFrame.AbsolutePosition.X
-    local pct = math.clamp(relativeX / SpeedSliderFrame.AbsoluteSize.X, 0, 1)
-    local val = pct * 100
-    updateSpeedFromValue(val)
-end
-
-SpeedSliderFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDraggingSpeedSlider = true
-        updateSpeedFromInput(input)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if isDraggingSpeedSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        updateSpeedFromInput(input)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDraggingSpeedSlider = false
-    end
-end)
-
-SpeedBox.FocusLost:Connect(function()
-    local num = tonumber(SpeedBox.Text:match("%d+%.?%d*"))
-    if num then
-        updateSpeedFromValue(num)
-    else
-        SpeedBox.Text = "Tốc độ: " .. tostring(currentCustomSpeed) .. " (Nhấn để chỉnh)"
-    end
-end)
-
-createKeybindButton(Slide1, "Thay đổi tốc độ", UDim2.new(0.025, 0, 0, 585), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    speedToggleState = state
-
-    if speedToggleState then
-        if not speedConnection then
-            speedConnection = RunService.RenderStepped:Connect(function()
-                local character = LocalPlayer.Character
-                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    humanoid.WalkSpeed = currentCustomSpeed
-                end
-            end)
-        end
-    else
-        if speedConnection then
-            speedConnection:Disconnect()
-            speedConnection = nil
-        end
-        local character = LocalPlayer.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = 16
-        end
-    end
-end)
-
--- // 7. HÀM XỬ LÝ TARGET LOGIC CHUNG //
 local function getTargetPlayer()
     local name = (modeOption == 1) and selectedPlayerName or InputNameBox1.Text
     if name ~= "" then
@@ -609,5 +506,95 @@ RunService.RenderStepped:Connect(function()
             local myHrp = LocalPlayer.Character.HumanoidRootPart
             myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, targetDistance)
         end
+    end
+end)
+-- // CHỈNH TỐC ĐỘ
+local SpeedToggle = false
+local customSpeed = 16
+local minSpeed, maxSpeed = 16, 150
+local defaultWalkSpeed = 16
+
+local SpeedBox = createStyledTextBox(Slide1, "16", UDim2.new(0.025, 0, 0, 530), UDim2.new(0.95, 0, 0, 22))
+SpeedBox.Text = "Tốc độ: 16 (Nhấn để chỉnh)"
+SpeedBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+
+local SpeedSliderFrame = Instance.new("Frame")
+SpeedSliderFrame.Size = UDim2.new(0.95, 0, 0, 15)
+SpeedSliderFrame.Position = UDim2.new(0.025, 0, 0, 557)
+SpeedSliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SpeedSliderFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSliderFrame.BorderSizePixel = 1
+SpeedSliderFrame.Parent = Slide1
+
+table.insert(registeredBorders, SpeedSliderFrame)
+
+local SpeedSliderFill = Instance.new("Frame")
+SpeedSliderFill.Size = UDim2.new(0, 0, 1, 0)
+SpeedSliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSliderFill.BorderSizePixel = 0
+SpeedSliderFill.Parent = SpeedSliderFrame
+
+local isDraggingSpeedSlider = false
+
+local function updateSpeedFromValue(val)
+    val = math.clamp(val, minSpeed, maxSpeed)
+    customSpeed = math.floor(val + 0.5)
+    SpeedSliderFill.Size = UDim2.new((customSpeed - minSpeed) / (maxSpeed - minSpeed), 0, 1, 0)
+    SpeedBox.Text = "Tốc độ: " .. tostring(customSpeed) .. " (Nhấn để chỉnh)"
+end
+
+local function updateSpeedFromInput(input)
+    local relativeX = input.Position.X - SpeedSliderFrame.AbsolutePosition.X
+    local pct = math.clamp(relativeX / SpeedSliderFrame.AbsoluteSize.X, 0, 1)
+    updateSpeedFromValue(minSpeed + pct * (maxSpeed - minSpeed))
+end
+
+SpeedSliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingSpeedSlider = true
+        updateSpeedFromInput(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDraggingSpeedSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSpeedFromInput(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingSpeedSlider = false
+    end
+end)
+
+SpeedBox.FocusLost:Connect(function()
+    local num = tonumber(SpeedBox.Text:match("%d+%.?%d*"))
+    if num then
+        updateSpeedFromValue(num)
+    else
+        SpeedBox.Text = "Tốc độ: " .. tostring(customSpeed) .. " (Nhấn để chỉnh)"
+    end
+end)
+
+updateSpeedFromValue(customSpeed)
+
+createKeybindButton(Slide1, "Chỉnh tốc độ", UDim2.new(0.025, 0, 0, 578), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    SpeedToggle = state
+    if not SpeedToggle then
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = defaultWalkSpeed
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not SpeedToggle then return end
+    local character = LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.WalkSpeed ~= customSpeed then
+        humanoid.WalkSpeed = customSpeed
     end
 end)
