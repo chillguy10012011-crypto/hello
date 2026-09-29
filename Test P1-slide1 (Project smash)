@@ -156,3 +156,99 @@ RunService.Heartbeat:Connect(function()
         hum.WalkSpeed = speedValue
     end
 end)
+-- // CÀI ĐẶT TỐC ĐỘ (SPEED MODIFIER) //
+local speedToggleState = false
+local currentCustomSpeed = 16 -- Tốc độ mặc định của Roblox là 16
+local speedConnection = nil
+
+local SpeedBox = createStyledTextBox(Slide1, "16", UDim2.new(0.025, 0, 0, 537), UDim2.new(0.95, 0, 0, 22))
+SpeedBox.Text = "Tốc độ: 16 (Nhấn để chỉnh)"
+SpeedBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+
+local SpeedSliderFrame = Instance.new("Frame")
+SpeedSliderFrame.Size = UDim2.new(0.95, 0, 0, 15)
+SpeedSliderFrame.Position = UDim2.new(0.025, 0, 0, 564)
+SpeedSliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SpeedSliderFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSliderFrame.BorderSizePixel = 1
+SpeedSliderFrame.Parent = Slide1
+
+table.insert(registeredBorders, SpeedSliderFrame)
+
+local SpeedSliderFill = Instance.new("Frame")
+-- Giả sử dải tốc độ từ 0 đến 100, giá trị mặc định 16 nằm ở vị trí 16/100
+SpeedSliderFill.Size = UDim2.new(16 / 100, 0, 1, 0)
+SpeedSliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSliderFill.BorderSizePixel = 0
+SpeedSliderFill.Parent = SpeedSliderFrame
+
+local isDraggingSpeedSlider = false
+
+local function updateSpeedFromValue(val)
+    val = math.clamp(val, 0, 100) -- Dải tốc độ từ 0 đến 100 (bạn có thể thay đổi tùy ý)
+    currentCustomSpeed = math.floor(val * 10 + 0.5) / 10
+    SpeedSliderFill.Size = UDim2.new(currentCustomSpeed / 100, 0, 1, 0)
+    SpeedBox.Text = "Tốc độ: " .. tostring(currentCustomSpeed) .. " (Nhấn để chỉnh)"
+end
+
+local function updateSpeedFromInput(input)
+    local relativeX = input.Position.X - SpeedSliderFrame.AbsolutePosition.X
+    local pct = math.clamp(relativeX / SpeedSliderFrame.AbsoluteSize.X, 0, 1)
+    local val = pct * 100
+    updateSpeedFromValue(val)
+end
+
+SpeedSliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingSpeedSlider = true
+        updateSpeedFromInput(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDraggingSpeedSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSpeedFromInput(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDraggingSpeedSlider = false
+    end
+end)
+
+SpeedBox.FocusLost:Connect(function()
+    local num = tonumber(SpeedBox.Text:match("%d+%.?%d*"))
+    if num then
+        updateSpeedFromValue(num)
+    else
+        SpeedBox.Text = "Tốc độ: " .. tostring(currentCustomSpeed) .. " (Nhấn để chỉnh)"
+    end
+end)
+
+createKeybindButton(Slide1, "Thay đổi tốc độ", UDim2.new(0.025, 0, 0, 585), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    speedToggleState = state
+
+    if speedToggleState then
+        if not speedConnection then
+            speedConnection = RunService.RenderStepped:Connect(function()
+                local character = LocalPlayer.Character
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.WalkSpeed = currentCustomSpeed
+                end
+            end)
+        end
+    else
+        if speedConnection then
+            speedConnection:Disconnect()
+            speedConnection = nil
+        end
+        -- Trả về tốc độ mặc định khi tắt nút
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 16
+        end
+    end
+end)
