@@ -1,0 +1,235 @@
+--// GUI TEST - Dash
+--// LocalScript
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+--// ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "YeahhTestGUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+--// Main
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(560, 360)
+main.Position = UDim2.fromScale(0.5, 0.5)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
+
+--// Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -30, 0, 45)
+title.Position = UDim2.fromOffset(15, 10)
+title.BackgroundTransparency = 1
+title.Text = "Yeahh"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = main
+
+--// Dash row
+local dashRow = Instance.new("Frame")
+dashRow.Size = UDim2.new(1, -30, 0, 55)
+dashRow.Position = UDim2.fromOffset(15, 65)
+dashRow.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+dashRow.BorderSizePixel = 0
+dashRow.Parent = main
+
+local rowCorner = Instance.new("UICorner")
+rowCorner.CornerRadius = UDim.new(0, 8)
+rowCorner.Parent = dashRow
+
+-- Dash name
+local dashName = Instance.new("TextLabel")
+dashName.Size = UDim2.fromOffset(150, 55)
+dashName.Position = UDim2.fromOffset(15, 0)
+dashName.BackgroundTransparency = 1
+dashName.Text = "Dash"
+dashName.TextColor3 = Color3.fromRGB(255, 255, 255)
+dashName.TextSize = 18
+dashName.Font = Enum.Font.GothamMedium
+dashName.TextXAlignment = Enum.TextXAlignment.Left
+dashName.Parent = dashRow
+
+--// Toggle
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.fromOffset(70, 32)
+toggle.Position = UDim2.new(1, -175, 0.5, 0)
+toggle.AnchorPoint = Vector2.new(0, 0.5)
+toggle.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+toggle.Text = "OFF"
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.TextSize = 14
+toggle.Font = Enum.Font.GothamBold
+toggle.BorderSizePixel = 0
+toggle.Parent = dashRow
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0)
+toggleCorner.Parent = toggle
+
+local enabled = false
+
+toggle.MouseButton1Click:Connect(function()
+	enabled = not enabled
+
+	if enabled then
+		toggle.Text = "ON"
+		toggle.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
+	else
+		toggle.Text = "OFF"
+		toggle.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+	end
+end)
+
+--// Keybind
+local keyButton = Instance.new("TextButton")
+keyButton.Size = UDim2.fromOffset(55, 32)
+keyButton.Position = UDim2.new(1, -95, 0.5, 0)
+keyButton.AnchorPoint = Vector2.new(0, 0.5)
+keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+keyButton.Text = "Q"
+keyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyButton.TextSize = 14
+keyButton.Font = Enum.Font.GothamBold
+keyButton.BorderSizePixel = 0
+keyButton.Parent = dashRow
+
+local keyCorner = Instance.new("UICorner")
+keyCorner.CornerRadius = UDim.new(0, 6)
+keyCorner.Parent = keyButton
+
+--// 3 dots
+local settingsButton = Instance.new("TextButton")
+settingsButton.Size = UDim2.fromOffset(40, 40)
+settingsButton.Position = UDim2.new(1, -45, 0.5, 0)
+settingsButton.AnchorPoint = Vector2.new(0, 0.5)
+settingsButton.BackgroundTransparency = 1
+settingsButton.Text = "⋮"
+settingsButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+settingsButton.TextSize = 25
+settingsButton.Font = Enum.Font.GothamBold
+settingsButton.Parent = dashRow
+
+--// Settings panel
+local settings = Instance.new("Frame")
+settings.Size = UDim2.new(1, -30, 0, 210)
+settings.Position = UDim2.fromOffset(15, 130)
+settings.BackgroundColor3 = Color3.fromRGB(30, 30, 37)
+settings.BorderSizePixel = 0
+settings.Visible = false
+settings.Parent = main
+
+local settingsCorner = Instance.new("UICorner")
+settingsCorner.CornerRadius = UDim.new(0, 8)
+settingsCorner.Parent = settings
+
+--// Settings title
+local settingsTitle = Instance.new("TextLabel")
+settingsTitle.Size = UDim2.new(1, -20, 0, 35)
+settingsTitle.Position = UDim2.fromOffset(10, 5)
+settingsTitle.BackgroundTransparency = 1
+settingsTitle.Text = "Dash Settings"
+settingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+settingsTitle.TextSize = 17
+settingsTitle.Font = Enum.Font.GothamBold
+settingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+settingsTitle.Parent = settings
+
+--// Helper tạo setting
+local function createSetting(name, value, y)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromOffset(200, 35)
+	label.Position = UDim2.fromOffset(15, y)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextSize = 14
+	label.Font = Enum.Font.GothamMedium
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = settings
+
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.fromOffset(100, 32)
+	box.Position = UDim2.new(1, -115, 0, y)
+	box.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+	box.Text = tostring(value)
+	box.TextColor3 = Color3.fromRGB(255, 255, 255)
+	box.TextSize = 14
+	box.Font = Enum.Font.Gotham
+	box.ClearTextOnFocus = false
+	box.BorderSizePixel = 0
+	box.Parent = settings
+
+	local boxCorner = Instance.new("UICorner")
+	boxCorner.CornerRadius = UDim.new(0, 6)
+	boxCorner.Parent = box
+
+	return box
+end
+
+--// Dash parameters
+local distanceBox = createSetting("Distance", 25, 50)
+local cooldownBox = createSetting("Cooldown", 1, 95)
+local durationBox = createSetting("Duration", 0.25, 140)
+
+--// Open / close settings
+settingsButton.MouseButton1Click:Connect(function()
+	settings.Visible = not settings.Visible
+
+	if settings.Visible then
+		main.Size = UDim2.fromOffset(560, 360)
+	else
+		main.Size = UDim2.fromOffset(560, 150)
+	end
+end)
+
+--// Keybind changing
+local waitingForKey = false
+
+keyButton.MouseButton1Click:Connect(function()
+	if waitingForKey then
+		return
+	end
+
+	waitingForKey = true
+	keyButton.Text = "..."
+
+	local connection
+	connection = UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then
+			return
+		end
+
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			keyButton.Text = input.KeyCode.Name
+			connection:Disconnect()
+			waitingForKey = false
+		end
+	end)
+end)
+
+--// Dash key test
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then
+		return
+	end
+
+	if input.KeyCode.Name == keyButton.Text and enabled then
+		print("Dash activated!")
+		print("Distance:", distanceBox.Text)
+		print("Cooldown:", cooldownBox.Text)
+		print("Duration:", durationBox.Text)
+	end
+end)
