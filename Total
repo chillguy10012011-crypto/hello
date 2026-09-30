@@ -1,7 +1,7 @@
 -- Danh sách các link chứa các loadstring nhỏ của bạn
 local moduleLinks = {
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P1-GUI",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/Testlinkslide",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/Testlinkslide-1.txt",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P3-slide2 (Fix lag)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P4-slide3 (Script Hub)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P5-slide4 (Spawn model)",
