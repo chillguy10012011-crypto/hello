@@ -1,22 +1,53 @@
-local SlideFix = createSlide("Scripts")
+local SlideMovement = createSlide("Movement")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
-local FixLagBtn = createStyledButton(SlideFix, "Chạy Code Fix Lag", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 35))
-FixLagBtn.MouseButton1Click:Connect(function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/chillguy10012011-crypto/Nh-n-j/refs/heads/main/Fix%20lag"))()
-    end)
-end)
+-- Nút Fly đơn giản
+local flyToggle = false
+local flySpeed = 50
 
-local LT2Btn = createStyledButton(SlideFix, "Chạy Script Kron Hub", UDim2.new(0.025, 0, 0, 65), UDim2.new(0.95, 0, 0, 35))
-LT2Btn.MouseButton1Click:Connect(function()
-    pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/DevKron/Kron_Hub/refs/heads/main/version_1.0'))()
-    end)
-end)
+local FlyBtn = Instance.new("TextButton")
+FlyBtn.Size = UDim2.new(0.95, 0, 0, 30)
+FlyBtn.Position = UDim2.new(0.025, 0, 0, 20)
+FlyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+FlyBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+FlyBtn.Text = "Fly (Bay tự do): OFF"
+FlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyBtn.Parent = SlideMovement
 
-local IYBtn = createStyledButton(SlideFix, "Chạy Script Infinite Yield", UDim2.new(0.025, 0, 0, 110), UDim2.new(0.95, 0, 0, 35))
-IYBtn.MouseButton1Click:Connect(function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-    end)
+FlyBtn.MouseButton1Click:Connect(function()
+    flyToggle = not flyToggle
+    FlyBtn.Text = "Fly (Bay tự do): " .. (flyToggle and "ON" or "OFF")
+    
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+    if flyToggle and hrp and humanoid then
+        local bv = Instance.new("BodyVelocity", hrp)
+        bv.Name = "FlyVelocity"
+        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bv.Velocity = Vector3.zero
+
+        local bg = Instance.new("BodyGyro", hrp)
+        bg.Name = "FlyGyro"
+        bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+        bg.CFrame = hrp.CFrame
+
+        humanoid.PlatformStand = true
+        
+        task.spawn(function()
+            while flyToggle and hrp and hrp.Parent do
+                bg.CFrame = Workspace.CurrentCamera.CFrame
+                bv.Velocity = Workspace.CurrentCamera.CFrame.LookVector * flySpeed
+                RunService.RenderStepped:Wait()
+            end
+            if bv then bv:Destroy() end
+            if bg then bg:Destroy() end
+            if humanoid then humanoid.PlatformStand = false end
+        end)
+    end
 end)
