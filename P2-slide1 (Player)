@@ -1,0 +1,265 @@
+local Slide1 = createSlide("Player")
+Slide1.Visible = true
+
+local selectedPlayerName = ""
+local modeOption = 1
+local targetDistance = 4
+
+local SelectedLbl = Instance.new("TextLabel")
+SelectedLbl.Size = UDim2.new(0.95, 0, 0, 25)
+SelectedLbl.Position = UDim2.new(0.025, 0, 0, 10)
+SelectedLbl.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SelectedLbl.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SelectedLbl.BorderSizePixel = 1
+SelectedLbl.Text = "Người chơi: [Chưa chọn]"
+SelectedLbl.TextColor3 = Color3.fromRGB(0, 255, 150)
+SelectedLbl.Font = Enum.Font.SourceSans
+SelectedLbl.TextSize = 13
+SelectedLbl.Parent = Slide1
+
+table.insert(registeredBorders, SelectedLbl)
+
+local PlayerListOpen = true
+local PlayerListRowHeight = 34
+
+local PlayerListToggle = Instance.new("TextButton")
+PlayerListToggle.Size = UDim2.new(0.95, 0, 0, 28)
+PlayerListToggle.Position = UDim2.new(0.025, 0, 0, 40)
+PlayerListToggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+PlayerListToggle.BorderColor3 = Color3.fromRGB(0, 170, 255)
+PlayerListToggle.BorderSizePixel = 1
+PlayerListToggle.Text = "▼  Người chơi trong server"
+PlayerListToggle.TextColor3 = Color3.fromRGB(0, 255, 150)
+PlayerListToggle.Font = Enum.Font.SourceSansBold
+PlayerListToggle.TextSize = 13
+PlayerListToggle.TextXAlignment = Enum.TextXAlignment.Left
+PlayerListToggle.Parent = Slide1
+
+table.insert(registeredBorders, PlayerListToggle)
+table.insert(registeredTexts, PlayerListToggle)
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(0.95, 0, 0, 0)
+PlayerList.Position = UDim2.new(0.025, 0, 0, 70)
+PlayerList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+PlayerList.BorderColor3 = Color3.fromRGB(0, 170, 255)
+PlayerList.BorderSizePixel = 1
+PlayerList.ScrollBarThickness = 0
+PlayerList.ScrollingEnabled = false
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerList.Parent = Slide1
+
+table.insert(registeredBorders, PlayerList)
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 2)
+UIList.Parent = PlayerList
+
+local originalPlayerListPositions = nil
+
+local function getPlayerCount()
+    local count = 0
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then count = count + 1 end
+    end
+    return count
+end
+
+local function getPlayerListHeight()
+    local count = getPlayerCount()
+    if count <= 0 then return 0 end
+    return (count * PlayerListRowHeight) - 2
+end
+
+local function updatePlayerListLayout()
+    if not originalPlayerListPositions then
+        originalPlayerListPositions = {}
+        for _, child in pairs(Slide1:GetChildren()) do
+            if child ~= SelectedLbl and child ~= PlayerListToggle and child ~= PlayerList and child:IsA("GuiObject") and child.Position.Y.Scale == 0 and child.Position.Y.Offset >= 100 then
+                originalPlayerListPositions[child] = child.Position.Y.Offset
+            end
+        end
+    end
+
+    local listHeight = PlayerListOpen and getPlayerListHeight() or 0
+    PlayerList.Size = UDim2.new(0.95, 0, 0, listHeight)
+    PlayerList.Visible = PlayerListOpen
+
+    local newInputY = 75 + listHeight
+    local offset = newInputY - 130
+
+    for object, originalY in pairs(originalPlayerListPositions) do
+        if object and object.Parent then
+            object.Position = UDim2.new(object.Position.X.Scale, object.Position.X.Offset, object.Position.Y.Scale, originalY + offset)
+        end
+    end
+end
+
+local function updatePlayerList()
+    for _, child in pairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local pBtn = Instance.new("TextButton")
+            pBtn.Size = UDim2.new(1, -8, 0, 32)
+            pBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            pBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+            pBtn.BorderSizePixel = 1
+            pBtn.Text = ""
+            pBtn.AutoButtonColor = true
+            pBtn.Parent = PlayerList
+
+            local nameLabel = Instance.new("TextLabel")
+            nameLabel.Size = UDim2.new(1, -42, 1, 0)
+            nameLabel.Position = UDim2.new(0, 6, 0, 0)
+            nameLabel.BackgroundTransparency = 1
+            nameLabel.Text = p.DisplayName .. " (@" .. p.Name .. ")"
+            nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            nameLabel.Font = Enum.Font.SourceSans
+            nameLabel.TextSize = 13
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            nameLabel.Parent = pBtn
+
+            local avatar = Instance.new("ImageLabel")
+            avatar.Size = UDim2.new(0, 26, 0, 26)
+            avatar.Position = UDim2.new(1, -31, 0.5, -13)
+            avatar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            avatar.BorderSizePixel = 0
+            avatar.Parent = pBtn
+
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(1, 0)
+            corner.Parent = avatar
+
+            pcall(function()
+                avatar.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+            end)
+
+            table.insert(registeredBorders, pBtn)
+            table.insert(registeredTexts, nameLabel)
+
+            pBtn.MouseButton1Click:Connect(function()
+                selectedPlayerName = p.Name
+                SelectedLbl.Text = "Người chơi: " .. selectedPlayerName
+            end)
+        end
+    end
+
+    local listHeight = getPlayerListHeight()
+    PlayerList.Size = UDim2.new(0.95, 0, 0, PlayerListOpen and listHeight or 0)
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, listHeight)
+end
+
+PlayerListToggle.MouseButton1Click:Connect(function()
+    PlayerListOpen = not PlayerListOpen
+    PlayerListToggle.Text = PlayerListOpen and "▼  Người chơi trong server" or "▶  Người chơi trong server"
+    updatePlayerListLayout()
+end)
+
+updatePlayerList()
+Players.PlayerAdded:Connect(function() updatePlayerList(); updatePlayerListLayout() end)
+Players.PlayerRemoving:Connect(function() task.defer(function() updatePlayerList(); updatePlayerListLayout() end) end)
+
+local InputNameBox1 = createStyledTextBox(Slide1, "Nhập Username...", UDim2.new(0.025, 0, 0, 130), UDim2.new(0.95, 0, 0, 28))
+
+local ModeFrame = Instance.new("Frame")
+ModeFrame.Size = UDim2.new(0.95, 0, 0, 30)
+ModeFrame.Position = UDim2.new(0.025, 0, 0, 163)
+ModeFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ModeFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+ModeFrame.BorderSizePixel = 1
+ModeFrame.Parent = Slide1
+table.insert(registeredBorders, ModeFrame)
+
+local Mode1Btn = createStyledButton(ModeFrame, "Chế độ 1", UDim2.new(0.01, 0, 0.08, 0), UDim2.new(0.48, 0, 0.84, 0))
+local Mode2Btn = createStyledButton(ModeFrame, "Chế độ 2", UDim2.new(0.51, 0, 0.08, 0), UDim2.new(0.48, 0, 0.84, 0))
+Mode1Btn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+
+Mode1Btn.MouseButton1Click:Connect(function()
+    modeOption = 1
+    Mode1Btn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    Mode2Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+Mode2Btn.MouseButton1Click:Connect(function()
+    modeOption = 2
+    Mode2Btn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    Mode1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+local LockAimToggle = false
+createKeybindButton(Slide1, "Nhìn người gần nhất", UDim2.new(0.025, 0, 0, 198), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    LockAimToggle = state
+end)
+
+local StandBehindToggle = false
+local _, _, StandBehindFrame = createKeybindButton(Slide1, "Đứng sau target", UDim2.new(0.025, 0, 0, 231), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    StandBehindToggle = state
+end)
+
+local AntiSlowToggle = false
+local antiSlowConnection = nil
+createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AntiSlowToggle = state
+    if AntiSlowToggle then
+        if not antiSlowConnection then
+            antiSlowConnection = RunService.RenderStepped:Connect(function()
+                local character = LocalPlayer.Character
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.WalkSpeed < 16 then humanoid.WalkSpeed = 16 end
+            end)
+        end
+    else
+        if antiSlowConnection then antiSlowConnection:Disconnect(); antiSlowConnection = nil end
+    end
+end)
+
+local DistBox = createStyledTextBox(Slide1, "4", UDim2.new(0.025, 0, 0, 297), UDim2.new(0.95, 0, 0, 22))
+DistBox.Text = "Khoảng cách: 4 studs (Nhấn để chỉnh)"
+DistBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+DistBox.Visible = false
+
+local function updateSliderFromValue(val)
+    val = math.clamp(val, 1, 20)
+    targetDistance = math.floor(val * 10 + 0.5) / 10
+    DistBox.Text = "Khoảng cách: " .. tostring(targetDistance) .. " studs (Nhấn để chỉnh)"
+end
+
+addParameterButton(StandBehindFrame, "Thông số • Đứng sau target", {{name="Khoảng cách", min=1, max=20, get=function() return targetDistance end, set=function(v) updateSliderFromValue(v) end}})
+
+local function getTargetPlayer()
+    local name = (modeOption == 1) and selectedPlayerName or InputNameBox1.Text
+    if name ~= "" then return Players:FindFirstChild(name) end
+    return nil
+end
+
+RunService.RenderStepped:Connect(function()
+    if LockAimToggle and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local myHrp = LocalPlayer.Character.HumanoidRootPart
+        local closestChar = nil
+        local shortestDist = math.huge
+
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (p.Character.HumanoidRootPart.Position - myHrp.Position).Magnitude
+                if dist < shortestDist then
+                    shortestDist = dist
+                    closestChar = p.Character.HumanoidRootPart
+                end
+            end
+        end
+        if closestChar then
+            Workspace.CurrentCamera.CFrame = CFrame.new(Workspace.CurrentCamera.CFrame.Position, closestChar.Position)
+        end
+    end
+
+    if StandBehindToggle and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local target = getTargetPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHrp = target.Character.HumanoidRootPart
+            LocalPlayer.Character.HumanoidRootPart.CFrame = targetHrp.CFrame * CFrame.new(0, 0, targetDistance)
+        end
+    end
+end)
