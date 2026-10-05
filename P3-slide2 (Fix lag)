@@ -1,8 +1,0 @@
-local Slide2 = createSlide(" fix lag ")
-local FixLagBtn = createStyledButton(Slide2, "Chạy Code Fix Lag", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 35))
-
-FixLagBtn.MouseButton1Click:Connect(function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/chillguy10012011-crypto/Nh-n-j/refs/heads/main/Fix%20lag"))()
-    end)
-end)
