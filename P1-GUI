@@ -1,3 +1,8 @@
+    NEW CONTROL PANEL - TEST BUILD
+    Gộp từ các file chức năng cũ, sắp xếp lại thành GUI mới.
+    Chưa tách loadstring/module ở bản này để dễ test toàn bộ trước.
+]]
+
 -- // TỐI ƯU HÀM BẢO MẬT CLONEREF
 local function getService(serviceName)
     local rawService = game:GetService(serviceName)
@@ -7,14 +12,16 @@ local function getService(serviceName)
     return rawService
 end
 
+-- // KHAI BÁO SERVICES
 local Players = getService("Players")
 local RunService = getService("RunService")
 local UserInputService = getService("UserInputService")
 local Workspace = getService("Workspace")
+
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = getService("CoreGui")
 
--- // HÀM KÉO THẢ (DRAGGABLE)
+-- // HÀM KÉO THẢ (DRAGGABLE) DÙNG CHUNG
 local function enableDragging(frame, dragHandle)
     dragHandle = dragHandle or frame
     local dragging, dragInput, dragStart, startPos
@@ -51,10 +58,11 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CustomControlGUI"
 ScreenGui.ResetOnSpawn = false
+
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
--- NÚT BẬT/TẮT HÌNH TRÒN
+-- // NÚT BẬT/TẮT HÌNH TRÒN (FLOATING BUTTON)
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "ToggleButton"
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -71,12 +79,14 @@ ToggleBtn.Parent = ScreenGui
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(1, 0)
 ToggleCorner.Parent = ToggleBtn
+
 enableDragging(ToggleBtn)
 
--- KHUNG CHÍNH (MAIN FRAME)
+-- // KHUNG CHÍNH (MAIN FRAME)
+local baseWidth, baseHeight = 275, 175
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Size = UDim2.new(0, baseWidth * 2, 0, baseHeight * 2)
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
@@ -100,6 +110,7 @@ TitleText.Font = Enum.Font.SourceSansBold
 TitleText.TextSize = 16
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Parent = TitleBar
+
 enableDragging(MainFrame, TitleBar)
 
 local CloseBtn = Instance.new("TextButton")
@@ -112,6 +123,54 @@ CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
 
+-- // NÚT SETTINGS (BÁNH RĂNG)
+local SettingsBtn = Instance.new("TextButton")
+SettingsBtn.Name = "SettingsButton"
+SettingsBtn.Size = UDim2.new(0, 30, 0, 30)
+SettingsBtn.Position = UDim2.new(1, -60, 0, 0)
+SettingsBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+SettingsBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SettingsBtn.BorderSizePixel = 1
+SettingsBtn.Text = "⚙"
+SettingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsBtn.Font = Enum.Font.SourceSansBold
+SettingsBtn.TextSize = 18
+SettingsBtn.Parent = TitleBar
+
+local SettingsPanel = Instance.new("Frame")
+SettingsPanel.Name = "SettingsPanel"
+SettingsPanel.Size = UDim2.new(0.82, 0, 0.88, 0)
+SettingsPanel.Position = UDim2.new(0.09, 0, 0.08, 0)
+SettingsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SettingsPanel.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SettingsPanel.BorderSizePixel = 2
+SettingsPanel.Visible = false
+SettingsPanel.ZIndex = 20
+SettingsPanel.Parent = MainFrame
+
+local SettingsTitle = Instance.new("TextLabel")
+SettingsTitle.Size = UDim2.new(1, -45, 0, 30)
+SettingsTitle.Position = UDim2.new(0, 10, 0, 0)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "SETTINGS"
+SettingsTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+SettingsTitle.Font = Enum.Font.SourceSansBold
+SettingsTitle.TextSize = 16
+SettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+SettingsTitle.ZIndex = 21
+SettingsTitle.Parent = SettingsPanel
+
+local SettingsClose = Instance.new("TextButton")
+SettingsClose.Size = UDim2.new(0, 30, 0, 30)
+SettingsClose.Position = UDim2.new(1, -32, 0, 0)
+SettingsClose.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+SettingsClose.Text = "X"
+SettingsClose.TextColor3 = Color3.fromRGB(255,255,255)
+SettingsClose.Font = Enum.Font.SourceSansBold
+SettingsClose.TextSize = 14
+SettingsClose.ZIndex = 21
+SettingsClose.Parent = SettingsPanel
+
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
@@ -119,3 +178,246 @@ end)
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Size = UDim2.new(0.35, 0, 1, -30)
+Sidebar.Position = UDim2.new(0, 0, 0, 30)
+Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Sidebar.BorderColor3 = Color3.fromRGB(0, 170, 255)
+Sidebar.BorderSizePixel = 1
+Sidebar.ScrollBarThickness = 4
+Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
+Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Sidebar.Parent = MainFrame
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 2)
+SidebarLayout.Parent = Sidebar
+
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(0.65, 0, 1, -30)
+ContentArea.Position = UDim2.new(0.35, 0, 0, 30)
+ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ContentArea.BorderSizePixel = 0
+ContentArea.Parent = MainFrame
+
+local slides = {}
+local registeredBackgrounds = {MainFrame, ContentArea}
+local registeredBorders = {MainFrame, TitleBar, Sidebar}
+local registeredTexts = {TitleText}
+local toggleButtonsRegistry = {} 
+local resetCallbacks = {} 
+local currentGuiStyle = "Default"
+table.insert(registeredBackgrounds, SettingsPanel)
+table.insert(registeredBorders, SettingsPanel)
+
+local function applyTheme(bgColor, borderColor, textColor)
+    if bgColor then
+        for _, obj in pairs(registeredBackgrounds) do
+            if obj:IsA("Frame") or obj:IsA("ScrollingFrame") then
+                obj.BackgroundColor3 = bgColor
+            end
+        end
+    end
+    if borderColor then
+        for _, obj in pairs(registeredBorders) do
+            obj.BorderColor3 = borderColor
+        end
+    end
+    if textColor then
+        for _, obj in pairs(registeredTexts) do
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                obj.TextColor3 = textColor
+            end
+        end
+    end
+end
+
+local function createSlide(name)
+    local slideFrame = Instance.new("ScrollingFrame")
+    slideFrame.Name = name
+    slideFrame.Size = UDim2.new(1, 0, 1, 0)
+    slideFrame.BackgroundTransparency = 1
+    slideFrame.BorderSizePixel = 0
+    slideFrame.ScrollBarThickness = 6
+    slideFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    slideFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    slideFrame.Visible = false
+    slideFrame.Parent = ContentArea
+
+    local navButton = Instance.new("TextButton")
+    navButton.Size = UDim2.new(1, 0, 0, 35)
+    navButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    navButton.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    navButton.BorderSizePixel = 1
+    navButton.Text = name
+    navButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    navButton.Font = Enum.Font.SourceSans
+    navButton.TextSize = 14
+    navButton.Parent = Sidebar
+
+    table.insert(registeredBorders, navButton)
+    table.insert(registeredTexts, navButton)
+
+    navButton.MouseButton1Click:Connect(function()
+        for _, s in pairs(slides) do s.Visible = false end
+        slideFrame.Visible = true
+    end)
+
+    slides[name] = slideFrame
+    return slideFrame
+end
+
+local function createStyledButton(parent, text, pos, size)
+    local btn = Instance.new("TextButton")
+    btn.Size = size or UDim2.new(0.95, 0, 0, 30)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    btn.BorderSizePixel = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 14
+    btn.Parent = parent
+
+    table.insert(registeredBorders, btn)
+    table.insert(registeredTexts, btn)
+    return btn
+end
+
+local function createStyledTextBox(parent, placeholder, pos, size)
+    local box = Instance.new("TextBox")
+    box.Size = size or UDim2.new(0.95, 0, 0, 30)
+    box.Position = pos
+    box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    box.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    box.BorderSizePixel = 1
+    box.PlaceholderText = placeholder
+    box.Text = ""
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.Font = Enum.Font.SourceSans
+    box.TextSize = 14
+    box.Parent = parent
+
+    table.insert(registeredBorders, box)
+    table.insert(registeredTexts, box)
+    return box
+end
+
+local ParameterPopup
+local ParameterPopupBody
+local ParameterPopupTitle
+
+local function closeParameterPopup()
+    if ParameterPopup then ParameterPopup.Visible = false end
+end
+
+local function openParameterPopup(mainFrame, title, fields)
+    if not ParameterPopup then
+        ParameterPopup = Instance.new("Frame")
+        ParameterPopup.Size = UDim2.new(0, 290, 0, 120)
+        ParameterPopup.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        ParameterPopup.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        ParameterPopup.BorderSizePixel = 1
+        ParameterPopup.ZIndex = 500
+        ParameterPopup.Visible = false
+        ParameterPopup.Parent = ScreenGui
+        ParameterPopupTitle = Instance.new("TextLabel")
+        ParameterPopupTitle.Size = UDim2.new(1, -42, 0, 32)
+        ParameterPopupTitle.Position = UDim2.new(0, 10, 0, 0)
+        ParameterPopupTitle.BackgroundTransparency = 1
+        ParameterPopupTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+        ParameterPopupTitle.Font = Enum.Font.SourceSansBold
+        ParameterPopupTitle.TextSize = 14
+        ParameterPopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+        ParameterPopupTitle.ZIndex = 501
+        ParameterPopupTitle.Parent = ParameterPopup
+        local close = Instance.new("TextButton")
+        close.Size = UDim2.new(0, 28, 0, 26)
+        close.Position = UDim2.new(1, -32, 0, 3)
+        close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        close.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        close.Text = "X"
+        close.TextColor3 = Color3.fromRGB(255, 255, 255)
+        close.Font = Enum.Font.SourceSansBold
+        close.TextSize = 12
+        close.ZIndex = 501
+        close.Parent = ParameterPopup
+        close.MouseButton1Click:Connect(closeParameterPopup)
+        ParameterPopupBody = Instance.new("Frame")
+        ParameterPopupBody.Size = UDim2.new(1, -20, 1, -38)
+        ParameterPopupBody.Position = UDim2.new(0, 10, 0, 36)
+        ParameterPopupBody.BackgroundTransparency = 1
+        ParameterPopupBody.ZIndex = 501
+        ParameterPopupBody.Parent = ParameterPopup
+    end
+    for _, child in ipairs(ParameterPopupBody:GetChildren()) do child:Destroy() end
+    ParameterPopupTitle.Text = title
+    local y = 0
+    for _, field in ipairs(fields) do
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.58, -4, 0, 28)
+        label.Position = UDim2.new(0, 0, 0, y)
+        label.BackgroundTransparency = 1
+        label.Text = field.name
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Font = Enum.Font.SourceSans
+        label.TextSize = 13
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.ZIndex = 502
+        label.Parent = ParameterPopupBody
+        local box = Instance.new("TextBox")
+        box.Size = UDim2.new(0.42, 0, 0, 26)
+        box.Position = UDim2.new(0.58, 4, 0, y)
+        box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        box.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        box.BorderSizePixel = 1
+        box.Text = tostring(field.get())
+        box.TextColor3 = Color3.fromRGB(255, 255, 255)
+        box.Font = Enum.Font.SourceSans
+        box.TextSize = 13
+        box.ClearTextOnFocus = false
+        box.ZIndex = 502
+        box.Parent = ParameterPopupBody
+        box.FocusLost:Connect(function()
+            local value = tonumber(box.Text)
+            if value then
+                if field.min then value = math.max(field.min, value) end
+                if field.max then value = math.min(field.max, value) end
+                field.set(value)
+            end
+            box.Text = tostring(field.get())
+        end)
+        y = y + 32
+    end
+    local popupHeight = 44 + y
+    ParameterPopup.Size = UDim2.new(0, 290, 0, popupHeight)
+    local abs = mainFrame.AbsolutePosition
+    local size = mainFrame.AbsoluteSize
+    local camera = Workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(800, 600)
+    local x = math.clamp(abs.X + size.X - 290, 4, viewport.X - 294)
+    local py = abs.Y + size.Y + 5
+    if py + popupHeight > viewport.Y - 4 then py = math.max(4, abs.Y - popupHeight - 5) end
+    ParameterPopup.Position = UDim2.fromOffset(x, py)
+    ParameterPopup.Visible = true
+end
+
+local function addParameterButton(mainFrame, title, fields)
+    local more = Instance.new("TextButton")
+    more.Name = "ParameterButton"
+    more.Size = UDim2.new(0, 28, 1, 0)
+    more.Position = UDim2.new(1, -68, 0, 0)
+    more.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    more.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    more.BorderSizePixel = 1
+    more.Text = "..."
+    more.TextColor3 = Color3.fromRGB(255, 255, 255)
+    more.Font = Enum.Font.SourceSansBold
+    more.TextSize = 14
+    more.ZIndex = 10
+    more.Parent = mainFrame
+    table.insert(registeredBorders, more)
+    more.MouseButton1Click:Connect(function() openParameterPopup(mainFrame, title, fields) end)
+end
