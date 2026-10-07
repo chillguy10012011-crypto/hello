@@ -1,0 +1,289 @@
+-- // PHẦN 8: SLIDE UTILITY & SETTINGS WINDOW
+local SlideUtility = createSlide("Utility")
+
+local ResetAllBtn = createStyledButton(SlideUtility, "Reset all / Stop all", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 40))
+ResetAllBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+
+ResetAllBtn.MouseButton1Click:Connect(function()
+    for _, resetFunc in ipairs(resetCallbacks) do
+        pcall(resetFunc)
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character then
+            local hl = p.Character:FindFirstChild("CustomESPHighlight")
+            if hl then hl:Destroy() end
+            local head = p.Character:FindFirstChild("Head")
+            if head then
+                local billboard = head:FindFirstChild("CustomNameBillboard")
+                if billboard then billboard:Destroy() end
+            end
+        end
+    end
+
+    if clearTracers then pcall(clearTracers) end
+    local char = LocalPlayer.Character
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if hrp then
+            for _, name in ipairs({"FlyVelocity", "FlyGyro", "AirWalkVelocity"}) do
+                local obj = hrp:FindFirstChild(name)
+                if obj then obj:Destroy() end
+            end
+        end
+        if humanoid then
+            humanoid.PlatformStand = false
+            humanoid.WalkSpeed = 16
+            pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true) end)
+            pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true) end)
+            pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Stunned, true) end)
+        end
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+    local floor = Workspace:FindFirstChild("CustomInvisibleFloor")
+    if floor then floor:Destroy() end
+    if updateXrayState then pcall(updateXrayState) end
+end)
+
+local Info = createStyledButton(SlideUtility, "Test GUI mới • Reset All để tắt các toggle", UDim2.new(0.025, 0, 0, 75), UDim2.new(0.95, 0, 0, 35))
+Info.Active = false
+
+TranspBox.Visible = false
+TranspSliderFrame.Visible = false
+addParameterButton(XrayFrame, "Thông số • X-Ray", {{name="Độ mờ (%)", min=0, max=100, get=function() return xrayTransparencyPct end, set=function(v) updateTranspFromValue(v) end}})
+
+local SettingsGui = Instance.new("ScreenGui")
+SettingsGui.Name = "ControlPanelSettings"
+SettingsGui.ResetOnSpawn = false
+SettingsGui.DisplayOrder = 999
+pcall(function() SettingsGui.Parent = CoreGui end)
+if not SettingsGui.Parent then SettingsGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local SettingsWindow = Instance.new("Frame")
+SettingsWindow.Name = "SettingsWindow"
+SettingsWindow.Size = UDim2.new(0, 330, 0, 355)
+SettingsWindow.Position = UDim2.new(0.5, -165, 0.5, -177)
+SettingsWindow.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SettingsWindow.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SettingsWindow.BorderSizePixel = 2
+SettingsWindow.Visible = false
+SettingsWindow.Parent = SettingsGui
+
+local SettingsTop = Instance.new("Frame")
+SettingsTop.Size = UDim2.new(1, 0, 0, 34)
+SettingsTop.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SettingsTop.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SettingsTop.BorderSizePixel = 1
+SettingsTop.Parent = SettingsWindow
+
+enableDragging(SettingsWindow, SettingsTop)
+
+local SettingsWindowTitle = Instance.new("TextLabel")
+SettingsWindowTitle.Size = UDim2.new(1, -42, 1, 0)
+SettingsWindowTitle.Position = UDim2.new(0, 10, 0, 0)
+SettingsWindowTitle.BackgroundTransparency = 1
+SettingsWindowTitle.Text = "⚙  GUI SETTINGS"
+SettingsWindowTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+SettingsWindowTitle.Font = Enum.Font.SourceSansBold
+SettingsWindowTitle.TextSize = 16
+SettingsWindowTitle.TextXAlignment = Enum.TextXAlignment.Left
+SettingsWindowTitle.Parent = SettingsTop
+
+local SettingsWindowClose = Instance.new("TextButton")
+SettingsWindowClose.Size = UDim2.new(0, 34, 0, 34)
+SettingsWindowClose.Position = UDim2.new(1, -34, 0, 0)
+SettingsWindowClose.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+SettingsWindowClose.Text = "X"
+SettingsWindowClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsWindowClose.Font = Enum.Font.SourceSansBold
+SettingsWindowClose.TextSize = 14
+SettingsWindowClose.Parent = SettingsTop
+
+local SettingsContent = Instance.new("ScrollingFrame")
+SettingsContent.Size = UDim2.new(1, -12, 1, -46)
+SettingsContent.Position = UDim2.new(0, 6, 0, 40)
+SettingsContent.BackgroundTransparency = 1
+SettingsContent.BorderSizePixel = 0
+SettingsContent.ScrollBarThickness = 4
+SettingsContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+SettingsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SettingsContent.Parent = SettingsWindow
+
+local SettingsLayout = Instance.new("UIListLayout")
+SettingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SettingsLayout.Padding = UDim.new(0, 7)
+SettingsLayout.Parent = SettingsContent
+
+local function settingsLabel(text)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -8, 0, 22)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(0, 170, 255)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = SettingsContent
+    return label
+end
+
+local function settingsButton(text)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -8, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    btn.BorderSizePixel = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 14
+    btn.Parent = SettingsContent
+    return btn
+end
+
+settingsLabel("Kiểu dáng GUI")
+local StyleRow = Instance.new("Frame")
+StyleRow.Size = UDim2.new(1, -8, 0, 34)
+StyleRow.BackgroundTransparency = 1
+StyleRow.Parent = SettingsContent
+
+local DefaultStyleBtn = Instance.new("TextButton")
+DefaultStyleBtn.Size = UDim2.new(0.49, -3, 1, 0)
+DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+DefaultStyleBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+DefaultStyleBtn.Text = "Mặc định"
+DefaultStyleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+DefaultStyleBtn.Font = Enum.Font.SourceSansBold
+DefaultStyleBtn.TextSize = 14
+DefaultStyleBtn.Parent = StyleRow
+
+local Gui1StyleBtn = Instance.new("TextButton")
+Gui1StyleBtn.Size = UDim2.new(0.49, -3, 1, 0)
+Gui1StyleBtn.Position = UDim2.new(0.51, 0, 0, 0)
+Gui1StyleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Gui1StyleBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+Gui1StyleBtn.Text = "GUI 1"
+Gui1StyleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+Gui1StyleBtn.Font = Enum.Font.SourceSansBold
+Gui1StyleBtn.TextSize = 14
+Gui1StyleBtn.Parent = StyleRow
+
+DefaultStyleBtn.MouseButton1Click:Connect(function()
+    DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    Gui1StyleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    setGuiStyle("Default")
+end)
+
+Gui1StyleBtn.MouseButton1Click:Connect(function()
+    Gui1StyleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+    DefaultStyleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    setGuiStyle("GUI1")
+end)
+
+local colorList = {
+    Color3.fromRGB(35, 35, 35), Color3.fromRGB(20, 20, 20), Color3.fromRGB(50, 50, 50),
+    Color3.fromRGB(0, 170, 255), Color3.fromRGB(255, 85, 85), Color3.fromRGB(85, 255, 85),
+    Color3.fromRGB(255, 255, 85), Color3.fromRGB(170, 85, 255), Color3.fromRGB(255, 170, 0),
+    Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 105, 180)
+}
+
+local function createSettingsPalette(titleText, callback)
+    settingsLabel(titleText)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, -8, 0, 52)
+    holder.BackgroundTransparency = 1
+    holder.Parent = SettingsContent
+
+    local grid = Instance.new("UIGridLayout")
+    grid.CellSize = UDim2.new(0, 25, 0, 20)
+    grid.CellPadding = UDim2.new(0, 5, 0, 5)
+    grid.Parent = holder
+
+    for _, color in ipairs(colorList) do
+        local btn = Instance.new("TextButton")
+        btn.BackgroundColor3 = color
+        btn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+        btn.BorderSizePixel = 1
+        btn.Text = ""
+        btn.Parent = holder
+        btn.MouseButton1Click:Connect(function()
+            callback(color)
+        end)
+    end
+end
+
+createSettingsPalette("Màu nền GUI", function(color)
+    applyTheme(color, nil, nil)
+    SettingsWindow.BackgroundColor3 = color
+end)
+
+createSettingsPalette("Màu viền GUI", function(color)
+    applyTheme(nil, color, nil)
+    SettingsWindow.BorderColor3 = color
+    SettingsTop.BorderColor3 = color
+end)
+
+createSettingsPalette("Màu chữ GUI", function(color)
+    applyTheme(nil, nil, color)
+    SettingsWindowTitle.TextColor3 = color
+end)
+
+local ResetColorBtn = settingsButton("Khôi phục màu mặc định")
+ResetColorBtn.MouseButton1Click:Connect(function()
+    local bg = Color3.fromRGB(35, 35, 35)
+    local border = Color3.fromRGB(0, 170, 255)
+    local text = Color3.fromRGB(255, 255, 255)
+    applyTheme(bg, border, text)
+    SettingsWindow.BackgroundColor3 = bg
+    SettingsWindow.BorderColor3 = border
+    SettingsTop.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    SettingsTop.BorderColor3 = border
+    SettingsWindowTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+end)
+
+SettingsBtn.MouseButton1Click:Connect(function()
+    SettingsWindow.Visible = not SettingsWindow.Visible
+end)
+
+SettingsWindowClose.MouseButton1Click:Connect(function()
+    SettingsWindow.Visible = false
+end)
+
+local function compactContainer(container, topPadding, gap, skipHidden)
+    topPadding = topPadding or 8
+    gap = gap or 4
+    local items = {}
+    for _, child in ipairs(container:GetChildren()) do
+        if child:IsA("GuiObject") and child.Position.Y.Scale == 0 then
+            if not (skipHidden and not child.Visible) then
+                table.insert(items, child)
+            end
+        end
+    end
+    table.sort(items, function(a, b)
+        return a.Position.Y.Offset < b.Position.Y.Offset
+    end)
+    local y = topPadding
+    for _, child in ipairs(items) do
+        child.Position = UDim2.new(child.Position.X.Scale, child.Position.X.Offset, child.Position.Y.Scale, y)
+        y = y + child.Size.Y.Offset + gap
+    end
+    if container:IsA("ScrollingFrame") then
+        container.CanvasSize = UDim2.new(0, 0, 0, math.max(0, y + 8))
+    end
+end
+
+compactContainer(SlideMovement, 8, 4, true)
+compactContainer(VisualSlide, 8, 4, true)
+compactContainer(SlideSpawn, 8, 4, true)
+compactContainer(SlideFix, 8, 4, true)
+compactContainer(SlideUtility, 8, 4, true)
+
+for _, s in pairs(slides) do s.Visible = false end
+if slides["Player"] then slides["Player"].Visible = true end
+SettingsWindow.Visible = false
+
+setGuiStyle("Default")
