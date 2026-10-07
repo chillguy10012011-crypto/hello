@@ -2,12 +2,11 @@
 local moduleLinks = {
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P1-GUI",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P2-slide1 (Player)",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P3-slide2 (Fix lag-ScriptHub)",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P4-slide3 (Script Hub)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P3-slide2 (Movement)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P4-slide3 (Visual)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P5-slide4 (Spawn model)",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P6-slide5 (Setting)",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P7-slide6 (Move)",
-    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P8-slide7 (Test)"
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P6-slide5 (Script Hub)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P7-slide6 (Utility)",
 }
 
 local compiledCode = ""
