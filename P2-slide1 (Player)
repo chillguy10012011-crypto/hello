@@ -1,152 +1,4 @@
-    size = size or UDim2.new(0.95, 0, 0, 30)
-    
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = size
-    mainFrame.Position = pos
-    mainFrame.BackgroundTransparency = 1
-    mainFrame.Parent = parent
-
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, -70, 1, 0)
-    toggleBtn.Position = UDim2.new(0, 0, 0, 0)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    toggleBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
-    toggleBtn.BorderSizePixel = 1
-    toggleBtn.Text = defaultText .. " (OFF)"
-    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleBtn.Font = Enum.Font.SourceSans
-    toggleBtn.TextSize = 13
-    toggleBtn.TextXAlignment = Enum.TextXAlignment.Center
-    toggleBtn.Parent = mainFrame
-
-    local checkBox = Instance.new("TextButton")
-    checkBox.Size = UDim2.new(0, 24, 0, 24)
-    checkBox.Position = UDim2.new(1, -98, 0.5, -12)
-    checkBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    checkBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
-    checkBox.BorderSizePixel = 1
-    checkBox.Text = ""
-    checkBox.TextColor3 = Color3.fromRGB(0, 255, 120)
-    checkBox.Font = Enum.Font.SourceSansBold
-    checkBox.TextSize = 16
-    checkBox.Visible = false
-    checkBox.Parent = mainFrame
-
-    local keybindBox = Instance.new("TextButton")
-    keybindBox.Size = UDim2.new(0, 38, 1, 0)
-    keybindBox.Position = UDim2.new(1, -38, 0, 0)
-    keybindBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    keybindBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
-    keybindBox.BorderSizePixel = 1
-    keybindBox.Text = defaultKey and defaultKey.Name or "None"
-    keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-    keybindBox.Font = Enum.Font.SourceSansBold
-    keybindBox.TextSize = 12
-    keybindBox.Parent = mainFrame
-
-    table.insert(registeredBorders, toggleBtn)
-    table.insert(registeredBorders, keybindBox)
-    table.insert(registeredBorders, checkBox)
-    table.insert(registeredTexts, toggleBtn)
-
-    local isToggled = false
-    local currentKey = defaultKey
-    local isBinding = false
-
-    local function updateVisuals()
-        if currentGuiStyle == "GUI1" then
-            toggleBtn.BackgroundTransparency = 1
-            toggleBtn.BorderSizePixel = 0
-            toggleBtn.TextXAlignment = Enum.TextXAlignment.Left
-            toggleBtn.Text = defaultText
-            checkBox.Visible = true
-            checkBox.Text = isToggled and "✓" or ""
-        else
-            toggleBtn.BackgroundTransparency = 0
-            toggleBtn.BorderSizePixel = 1
-            toggleBtn.TextXAlignment = Enum.TextXAlignment.Center
-            toggleBtn.Text = defaultText .. " (" .. (isToggled and "ON" or "OFF") .. ")"
-            toggleBtn.BackgroundColor3 = isToggled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
-            checkBox.Visible = false
-        end
-    end
-
-    local function executeToggle()
-        isToggled = not isToggled
-        updateVisuals()
-        if onToggleCallback then
-            onToggleCallback(isToggled)
-        end
-    end
-
-    local function forceResetOff()
-        if isToggled then
-            isToggled = false
-            updateVisuals()
-            if onToggleCallback then
-                onToggleCallback(false)
-            end
-        end
-    end
-    table.insert(resetCallbacks, forceResetOff)
-
-    toggleBtn.MouseButton1Click:Connect(executeToggle)
-    checkBox.MouseButton1Click:Connect(executeToggle)
-
-    keybindBox.MouseButton1Click:Connect(function()
-        isBinding = true
-        keybindBox.Text = "..."
-        keybindBox.TextColor3 = Color3.fromRGB(255, 255, 0)
-    end)
-
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if isBinding then
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
-                    currentKey = nil
-                    keybindBox.Text = "None"
-                else
-                    currentKey = input.KeyCode
-                    keybindBox.Text = currentKey.Name
-                end
-                keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-                isBinding = false
-            end
-        elseif not gameProcessed and currentKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
-            executeToggle()
-        end
-    end)
-
-    table.insert(toggleButtonsRegistry, updateVisuals)
-
-    return toggleBtn, keybindBox, mainFrame
-end
-
-local function setGuiStyle(styleName)
-    currentGuiStyle = styleName
-    if styleName == "GUI1" then
-        MainFrame.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
-        MainFrame.BorderColor3 = Color3.fromRGB(0, 230, 255)
-        TitleBar.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
-        TitleBar.BorderColor3 = Color3.fromRGB(0, 230, 255)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
-        Sidebar.BorderColor3 = Color3.fromRGB(0, 230, 255)
-        ContentArea.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
-    else
-        MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
-        TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        TitleBar.BorderColor3 = Color3.fromRGB(0, 170, 255)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Sidebar.BorderColor3 = Color3.fromRGB(0, 170, 255)
-        ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    end
-
-    for _, updateFunc in ipairs(toggleButtonsRegistry) do
-        updateFunc()
-    end
-end
-
+-- // PHẦN 2: SLIDE PLAYER
 local Slide1 = createSlide("Player")
 Slide1.Visible = true
 
@@ -168,7 +20,6 @@ SelectedLbl.Parent = Slide1
 
 table.insert(registeredBorders, SelectedLbl)
 
--- // DANH SÁCH NGƯỜI CHƠI
 local PlayerListOpen = true
 local PlayerListRowHeight = 34
 
@@ -210,40 +61,28 @@ local originalPlayerListPositions = nil
 local function getPlayerCount()
     local count = 0
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            count = count + 1
-        end
+        if p ~= LocalPlayer then count = count + 1 end
     end
     return count
 end
 
 local function getPlayerListHeight()
     local count = getPlayerCount()
-    if count <= 0 then
-        return 0
-    end
+    if count <= 0 then return 0 end
     return (count * PlayerListRowHeight) - 2
 end
 
 local function updatePlayerListLayout()
     if not originalPlayerListPositions then
         originalPlayerListPositions = {}
-
         for _, child in pairs(Slide1:GetChildren()) do
-            if child ~= SelectedLbl
-                and child ~= PlayerListToggle
-                and child ~= PlayerList
-                and child:IsA("GuiObject")
-                and child.Position.Y.Scale == 0
-                and child.Position.Y.Offset >= 100 then
-
+            if child ~= SelectedLbl and child ~= PlayerListToggle and child ~= PlayerList and child:IsA("GuiObject") and child.Position.Y.Scale == 0 and child.Position.Y.Offset >= 100 then
                 originalPlayerListPositions[child] = child.Position.Y.Offset
             end
         end
     end
 
     local listHeight = PlayerListOpen and getPlayerListHeight() or 0
-
     PlayerList.Size = UDim2.new(0.95, 0, 0, listHeight)
     PlayerList.Visible = PlayerListOpen
 
@@ -252,21 +91,14 @@ local function updatePlayerListLayout()
 
     for object, originalY in pairs(originalPlayerListPositions) do
         if object and object.Parent then
-            object.Position = UDim2.new(
-                object.Position.X.Scale,
-                object.Position.X.Offset,
-                object.Position.Y.Scale,
-                originalY + offset
-            )
+            object.Position = UDim2.new(object.Position.X.Scale, object.Position.X.Offset, object.Position.Y.Scale, originalY + offset)
         end
     end
 end
 
 local function updatePlayerList()
     for _, child in pairs(PlayerList:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+        if child:IsA("TextButton") then child:Destroy() end
     end
 
     for _, p in pairs(Players:GetPlayers()) do
@@ -303,16 +135,9 @@ local function updatePlayerList()
             corner.Parent = avatar
 
             local success, content = pcall(function()
-                return Players:GetUserThumbnailAsync(
-                    p.UserId,
-                    Enum.ThumbnailType.HeadShot,
-                    Enum.ThumbnailSize.Size48x48
-                )
+                return Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
             end)
-
-            if success and content then
-                avatar.Image = content
-            end
+            if success and content then avatar.Image = content end
 
             table.insert(registeredBorders, pBtn)
             table.insert(registeredTexts, nameLabel)
@@ -331,13 +156,7 @@ end
 
 PlayerListToggle.MouseButton1Click:Connect(function()
     PlayerListOpen = not PlayerListOpen
-
-    if PlayerListOpen then
-        PlayerListToggle.Text = "▼  Người chơi trong server"
-    else
-        PlayerListToggle.Text = "▶  Người chơi trong server"
-    end
-
+    PlayerListToggle.Text = PlayerListOpen and "▼  Người chơi trong server" or "▶  Người chơi trong server"
     updatePlayerListLayout()
 end)
 
@@ -351,7 +170,6 @@ Players.PlayerAdded:Connect(function()
     updatePlayerList()
     updatePlayerListLayout()
 end)
-
 Players.PlayerRemoving:Connect(function()
     task.defer(function()
         updatePlayerList()
@@ -397,14 +215,12 @@ local StandBehindButton, _, StandBehindFrame = createKeybindButton(Slide1, "Đ�
     StandBehindToggle = state
 end)
 
--- // CHỐNG GIẢM TỐC
 local AntiSlowToggle = false
 local antiSlowConnection = nil
 local antiSlowDefaultSpeed = 16
 
 createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     AntiSlowToggle = state
-
     if AntiSlowToggle then
         if not antiSlowConnection then
             antiSlowConnection = RunService.RenderStepped:Connect(function()
@@ -422,6 +238,7 @@ createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264),
         end
     end
 end)
+
 local DistBox = createStyledTextBox(Slide1, "4", UDim2.new(0.025, 0, 0, 297), UDim2.new(0.95, 0, 0, 22))
 DistBox.Text = "Khoảng cách: 4 studs (Nhấn để chỉnh)"
 DistBox.TextColor3 = Color3.fromRGB(0, 170, 255)
@@ -492,9 +309,7 @@ addParameterButton(StandBehindFrame, "Thông số • Đứng sau target", {{nam
 
 local function getTargetPlayer()
     local name = (modeOption == 1) and selectedPlayerName or InputNameBox1.Text
-    if name ~= "" then
-        return Players:FindFirstChild(name)
-    end
+    if name ~= "" then return Players:FindFirstChild(name) end
     return nil
 end
 
@@ -528,3 +343,5 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+updatePlayerListLayout()
