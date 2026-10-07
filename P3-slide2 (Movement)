@@ -1,5 +1,6 @@
+-- // PHẦN 3: SLIDE MOVEMENT (PHẦN 1)
+local SlideMovement = createSlide("Movement")
 
--- 1. NÚT FLY (BAY TỰ DO TRÊN MOBILE VÀ PC)
 local flyToggle = false
 local flySpeed = 50
 local flyConnection = nil
@@ -34,7 +35,6 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
 
             local camera = Workspace.CurrentCamera
             local moveVector = humanoid.MoveDirection
-
             bg.CFrame = camera.CFrame
 
             if moveVector.Magnitude > 0 then
@@ -46,9 +46,7 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
                 local dotRight = moveVector:Dot(cameraCFrame.RightVector)
 
                 local flyDirection = (forwardVector * dotForward) + (rightVector * dotRight)
-                if flyDirection.Magnitude > 0 then
-                    flyDirection = flyDirection.Unit
-                end
+                if flyDirection.Magnitude > 0 then flyDirection = flyDirection.Unit end
 
                 bv.Velocity = flyDirection * flySpeed
             else
@@ -56,25 +54,19 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
             end
         end)
     else
-        if flyConnection then
-            flyConnection:Disconnect()
-            flyConnection = nil
-        end
+        if flyConnection then flyConnection:Disconnect() flyConnection = nil end
         if hrp then
             local oldBv = hrp:FindFirstChild("FlyVelocity")
             local oldBg = hrp:FindFirstChild("FlyGyro")
             if oldBv then oldBv:Destroy() end
             if oldBg then oldBg:Destroy() end
         end
-        if humanoid then
-            humanoid.PlatformStand = false
-        end
+        if humanoid then humanoid.PlatformStand = false end
     end
 end)
 
 addParameterButton(FlyFrame, "Thông số • Fly", {{name="Tốc độ bay", min=1, max=200, get=function() return flySpeed end, set=function(v) flySpeed = v end}})
 
--- 2. NÚT NOCLIP + SÀN GIẢ TÀNG HÌNH
 local noClipToggle = false
 local noClipConnection = nil
 local fakeFloor = nil
@@ -86,9 +78,7 @@ createKeybindButton(SlideMovement, "NoClip (Xuyên tường + Sàn giả)", UDim
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
     if noClipToggle then
-        if hrp then
-            fixedY = hrp.Position.Y - 3.2
-        end
+        if hrp then fixedY = hrp.Position.Y - 3.2 end
 
         if not fakeFloor or not fakeFloor.Parent then
             fakeFloor = Instance.new("Part")
@@ -121,25 +111,17 @@ createKeybindButton(SlideMovement, "NoClip (Xuyên tường + Sàn giả)", UDim
             end
         end)
     else
-        if noClipConnection then
-            noClipConnection:Disconnect()
-            noClipConnection = nil
-        end
-        if fakeFloor then
-            fakeFloor:Destroy()
-            fakeFloor = nil
-        end
+        if noClipConnection then noClipConnection:Disconnect() noClipConnection = nil end
+        if fakeFloor then fakeFloor:Destroy() fakeFloor = nil end
         fixedY = nil
     end
 end)
 
--- 3. NÚT ANTIFLING
 local antiFlingToggle = false
 local antiFlingConnection = nil
 
 createKeybindButton(SlideMovement, "AntiFling (Chống văng chuẩn)", UDim2.new(0.025, 0, 0, 110), UDim2.new(0.95, 0, 0, 35), nil, function(state)
     antiFlingToggle = state
-
     if antiFlingToggle then
         if not antiFlingConnection then
             antiFlingConnection = RunService.Heartbeat:Connect(function()
@@ -155,14 +137,10 @@ createKeybindButton(SlideMovement, "AntiFling (Chống văng chuẩn)", UDim2.ne
             end)
         end
     else
-        if antiFlingConnection then
-            antiFlingConnection:Disconnect()
-            antiFlingConnection = nil
-        end
+        if antiFlingConnection then antiFlingConnection:Disconnect() antiFlingConnection = nil end
     end
 end)
 
--- 4. NÚT AIR WALK
 local airWalkToggle = false
 local airWalkSpeed = 50
 local airWalkConnection = nil
@@ -203,14 +181,12 @@ end)
 
 addParameterButton(AirWalkFrame, "Thông số • Air Walk", {{name="Tốc độ", min=1, max=200, get=function() return airWalkSpeed end, set=function(v) airWalkSpeed = v end}})
 
--- 5. NÚT TỐC BIẾN (PHÍM R)
 local flashStepToggle = false
 local flashStepDistance = 100
 
 local function getMouseTargetPosition()
     local mousePos = UserInputService:GetMouseLocation()
     local ray = Workspace.CurrentCamera:ScreenPointToRay(mousePos.X, mousePos.Y)
-    
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     if LocalPlayer.Character then
@@ -218,20 +194,15 @@ local function getMouseTargetPosition()
     end
 
     local result = Workspace:Raycast(ray.Origin, ray.Direction * flashStepDistance, raycastParams)
-    if result then
-        return result.Position
-    else
-        return ray.Origin + (ray.Direction * flashStepDistance)
-    end
+    if result then return result.Position
+    else return ray.Origin + (ray.Direction * flashStepDistance) end
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    
     if flashStepToggle and input.KeyCode == Enum.KeyCode.R then
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        
         if hrp then
             local targetPos = getMouseTargetPosition()
             hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2.5, 0), targetPos)
@@ -244,6 +215,7 @@ local FlashStepButton, _, FlashStepFrame = createKeybindButton(SlideMovement, "T
 end)
 
 addParameterButton(FlashStepFrame, "Thông số • Flash Step", {{name="Khoảng cách", min=1, max=500, get=function() return flashStepDistance end, set=function(v) flashStepDistance = v end}})
+-- // PHẦN 4: SLIDE MOVEMENT (PHẦN 2)
 local SpeedToggle = false
 local speedValue = 32
 local speedMin, speedMax = 16, 200
@@ -306,16 +278,12 @@ end)
 
 SpeedBox.FocusLost:Connect(function()
     local num = tonumber(SpeedBox.Text:match("%d+%.?%d*"))
-    if num then
-        updateSpeedFromValue(num)
-    else
-        SpeedBox.Text = "Tốc độ: " .. tostring(speedValue) .. " (Nhấn để chỉnh)"
-    end
+    if num then updateSpeedFromValue(num)
+    else SpeedBox.Text = "Tốc độ: " .. tostring(speedValue) .. " (Nhấn để chỉnh)" end
 end)
 
 local SpeedButton, _, SpeedFrame = createKeybindButton(SlideMovement, "Tăng tốc độ", UDim2.new(0.025, 0, 0, 245), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     SpeedToggle = state
-
     if SpeedToggle then
         if not speedConnection then
             speedConnection = RunService.Heartbeat:Connect(function()
@@ -333,9 +301,7 @@ local SpeedButton, _, SpeedFrame = createKeybindButton(SlideMovement, "Tăng t�
         end
         local character = LocalPlayer.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = speedDefault
-        end
+        if humanoid then humanoid.WalkSpeed = speedDefault end
     end
 end)
 
@@ -343,8 +309,6 @@ SpeedBox.Visible = false
 SpeedSliderFrame.Visible = false
 addParameterButton(SpeedFrame, "Thông số • Tốc độ", {{name="Tốc độ", min=16, max=200, get=function() return speedValue end, set=function(v) updateSpeedFromValue(v) end}})
 
--- // DASH
--- Dash client-side: Q để kích hoạt, có cooldown và hiệu ứng FOV/trail.
 local DashToggle = false
 local dashCooldown = 0.75
 local dashDistance = 42
@@ -352,46 +316,32 @@ local dashDuration = 0.16
 local dashReady = true
 local dashKey = Enum.KeyCode.Q
 
-local DashButton, _, DashFrame = createKeybindButton(
-    SlideMovement,
-    "Dash (Q)",
-    UDim2.new(0.025, 0, 0, 278),
-    UDim2.new(0.95, 0, 0, 28),
-    nil,
-    function(state)
-        DashToggle = state
-    end
-)
+local DashButton, _, DashFrame = createKeybindButton(SlideMovement, "Dash (Q)", UDim2.new(0.025, 0, 0, 278), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    DashToggle = state
+end)
 
 addParameterButton(DashFrame, "Thông số • Dash", {{name="Khoảng cách", min=1, max=200, get=function() return dashDistance end, set=function(v) dashDistance = v end}, {name="Cooldown", min=0, max=10, get=function() return dashCooldown end, set=function(v) dashCooldown = v end}, {name="Thời gian", min=0.03, max=2, get=function() return dashDuration end, set=function(v) dashDuration = v end}})
 
 local function getDashDirection()
     local character = LocalPlayer.Character
     if not character then return nil end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local root = character:FindFirstChild("HumanoidRootPart")
     if not humanoid or not root then return nil end
 
     local moveDirection = humanoid.MoveDirection
-    if moveDirection.Magnitude > 0.05 then
-        return moveDirection.Unit
-    end
+    if moveDirection.Magnitude > 0.05 then return moveDirection.Unit end
 
     local camera = Workspace.CurrentCamera
     if camera then
         local look = camera.CFrame.LookVector
         local flatLook = Vector3.new(look.X, 0, look.Z)
-        if flatLook.Magnitude > 0.05 then
-            return flatLook.Unit
-        end
+        if flatLook.Magnitude > 0.05 then return flatLook.Unit end
     end
 
     local look = root.CFrame.LookVector
     local flatLook = Vector3.new(look.X, 0, look.Z)
-    if flatLook.Magnitude > 0.05 then
-        return flatLook.Unit
-    end
+    if flatLook.Magnitude > 0.05 then return flatLook.Unit end
 
     return nil
 end
@@ -422,14 +372,10 @@ local function playDashEffect(character, root)
 
     local camera = Workspace.CurrentCamera
     local oldFov = camera and camera.FieldOfView or 70
-    if camera then
-        camera.FieldOfView = math.clamp(oldFov + 12, 1, 120)
-    end
+    if camera then camera.FieldOfView = math.clamp(oldFov + 12, 1, 120) end
 
     task.delay(dashDuration, function()
-        if camera and camera.Parent then
-            camera.FieldOfView = oldFov
-        end
+        if camera and camera.Parent then camera.FieldOfView = oldFov end
         if trail then trail:Destroy() end
         if attachment0 then attachment0:Destroy() end
         if attachment1 then attachment1:Destroy() end
@@ -438,10 +384,8 @@ end
 
 local function dash()
     if not DashToggle or not dashReady then return end
-
     local character = LocalPlayer.Character
     if not character then return end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local root = character:FindFirstChild("HumanoidRootPart")
     if not humanoid or not root or humanoid.Health <= 0 then return end
@@ -457,11 +401,7 @@ local function dash()
 
     while os.clock() - startTime < dashDuration do
         if not root.Parent or humanoid.Health <= 0 then break end
-        root.AssemblyLinearVelocity = Vector3.new(
-            direction.X * (dashDistance / dashDuration),
-            oldY,
-            direction.Z * (dashDistance / dashDuration)
-        )
+        root.AssemblyLinearVelocity = Vector3.new(direction.X * (dashDistance / dashDuration), oldY, direction.Z * (dashDistance / dashDuration))
         RunService.RenderStepped:Wait()
     end
 
@@ -477,9 +417,5 @@ end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == dashKey then
-        dash()
-    end
+    if input.KeyCode == dashKey then dash() end
 end)
-
-updatePlayerListLayout()
