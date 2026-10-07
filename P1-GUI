@@ -1,9 +1,4 @@
-    NEW CONTROL PANEL - TEST BUILD
-    Gộp từ các file chức năng cũ, sắp xếp lại thành GUI mới.
-    Chưa tách loadstring/module ở bản này để dễ test toàn bộ trước.
-]]
-
--- // TỐI ƯU HÀM BẢO MẬT CLONEREF
+-- // PHẦN 1: GUI CHÍNH & SETTINGS
 local function getService(serviceName)
     local rawService = game:GetService(serviceName)
     if cloneref then
@@ -12,7 +7,6 @@ local function getService(serviceName)
     return rawService
 end
 
--- // KHAI BÁO SERVICES
 local Players = getService("Players")
 local RunService = getService("RunService")
 local UserInputService = getService("UserInputService")
@@ -21,7 +15,6 @@ local Workspace = getService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = getService("CoreGui")
 
--- // HÀM KÉO THẢ (DRAGGABLE) DÙNG CHUNG
 local function enableDragging(frame, dragHandle)
     dragHandle = dragHandle or frame
     local dragging, dragInput, dragStart, startPos
@@ -54,7 +47,6 @@ local function enableDragging(frame, dragHandle)
     end)
 end
 
--- // TẠO GUI CHÍNH
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CustomControlGUI"
 ScreenGui.ResetOnSpawn = false
@@ -62,7 +54,6 @@ ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
--- // NÚT BẬT/TẮT HÌNH TRÒN (FLOATING BUTTON)
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "ToggleButton"
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -82,7 +73,6 @@ ToggleCorner.Parent = ToggleBtn
 
 enableDragging(ToggleBtn)
 
--- // KHUNG CHÍNH (MAIN FRAME)
 local baseWidth, baseHeight = 275, 175
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -123,7 +113,6 @@ CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
 
--- // NÚT SETTINGS (BÁNH RĂNG)
 local SettingsBtn = Instance.new("TextButton")
 SettingsBtn.Name = "SettingsButton"
 SettingsBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -148,29 +137,6 @@ SettingsPanel.Visible = false
 SettingsPanel.ZIndex = 20
 SettingsPanel.Parent = MainFrame
 
-local SettingsTitle = Instance.new("TextLabel")
-SettingsTitle.Size = UDim2.new(1, -45, 0, 30)
-SettingsTitle.Position = UDim2.new(0, 10, 0, 0)
-SettingsTitle.BackgroundTransparency = 1
-SettingsTitle.Text = "SETTINGS"
-SettingsTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
-SettingsTitle.Font = Enum.Font.SourceSansBold
-SettingsTitle.TextSize = 16
-SettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
-SettingsTitle.ZIndex = 21
-SettingsTitle.Parent = SettingsPanel
-
-local SettingsClose = Instance.new("TextButton")
-SettingsClose.Size = UDim2.new(0, 30, 0, 30)
-SettingsClose.Position = UDim2.new(1, -32, 0, 0)
-SettingsClose.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-SettingsClose.Text = "X"
-SettingsClose.TextColor3 = Color3.fromRGB(255,255,255)
-SettingsClose.Font = Enum.Font.SourceSansBold
-SettingsClose.TextSize = 14
-SettingsClose.ZIndex = 21
-SettingsClose.Parent = SettingsPanel
-
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
@@ -178,6 +144,7 @@ end)
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
+
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Size = UDim2.new(0.35, 0, 1, -30)
 Sidebar.Position = UDim2.new(0, 0, 0, 30)
@@ -201,13 +168,13 @@ ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 ContentArea.BorderSizePixel = 0
 ContentArea.Parent = MainFrame
 
-local slides = {}
-local registeredBackgrounds = {MainFrame, ContentArea}
-local registeredBorders = {MainFrame, TitleBar, Sidebar}
-local registeredTexts = {TitleText}
-local toggleButtonsRegistry = {} 
-local resetCallbacks = {} 
-local currentGuiStyle = "Default"
+getgenv().slides = getgenv().slides or {}
+getgenv().registeredBackgrounds = getgenv().registeredBackgrounds or {MainFrame, ContentArea}
+getgenv().registeredBorders = getgenv().registeredBorders or {MainFrame, TitleBar, Sidebar}
+getgenv().registeredTexts = getgenv().registeredTexts or {TitleText}
+getgenv().toggleButtonsRegistry = getgenv().toggleButtonsRegistry or {}
+getgenv().resetCallbacks = getgenv().resetCallbacks or {}
+getgenv().currentGuiStyle = getgenv().currentGuiStyle or "Default"
 table.insert(registeredBackgrounds, SettingsPanel)
 table.insert(registeredBorders, SettingsPanel)
 
@@ -305,9 +272,7 @@ local function createStyledTextBox(parent, placeholder, pos, size)
     return box
 end
 
-local ParameterPopup
-local ParameterPopupBody
-local ParameterPopupTitle
+local ParameterPopup, ParameterPopupBody, ParameterPopupTitle
 
 local function closeParameterPopup()
     if ParameterPopup then ParameterPopup.Visible = false end
@@ -420,4 +385,152 @@ local function addParameterButton(mainFrame, title, fields)
     more.Parent = mainFrame
     table.insert(registeredBorders, more)
     more.MouseButton1Click:Connect(function() openParameterPopup(mainFrame, title, fields) end)
+end
+
+local function createKeybindButton(parent, defaultText, pos, size, defaultKey, onToggleCallback)
+    size = size or UDim2.new(0.95, 0, 0, 30)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = size
+    mainFrame.Position = pos
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = parent
+
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, -70, 1, 0)
+    toggleBtn.Position = UDim2.new(0, 0, 0, 0)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    toggleBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    toggleBtn.BorderSizePixel = 1
+    toggleBtn.Text = defaultText .. " (OFF)"
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.Font = Enum.Font.SourceSans
+    toggleBtn.TextSize = 13
+    toggleBtn.TextXAlignment = Enum.TextXAlignment.Center
+    toggleBtn.Parent = mainFrame
+
+    local checkBox = Instance.new("TextButton")
+    checkBox.Size = UDim2.new(0, 24, 0, 24)
+    checkBox.Position = UDim2.new(1, -98, 0.5, -12)
+    checkBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    checkBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    checkBox.BorderSizePixel = 1
+    checkBox.Text = ""
+    checkBox.TextColor3 = Color3.fromRGB(0, 255, 120)
+    checkBox.Font = Enum.Font.SourceSansBold
+    checkBox.TextSize = 16
+    checkBox.Visible = false
+    checkBox.Parent = mainFrame
+
+    local keybindBox = Instance.new("TextButton")
+    keybindBox.Size = UDim2.new(0, 38, 1, 0)
+    keybindBox.Position = UDim2.new(1, -38, 0, 0)
+    keybindBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    keybindBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.BorderSizePixel = 1
+    keybindBox.Text = defaultKey and defaultKey.Name or "None"
+    keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.Font = Enum.Font.SourceSansBold
+    keybindBox.TextSize = 12
+    keybindBox.Parent = mainFrame
+
+    table.insert(registeredBorders, toggleBtn)
+    table.insert(registeredBorders, keybindBox)
+    table.insert(registeredBorders, checkBox)
+    table.insert(registeredTexts, toggleBtn)
+
+    local isToggled = false
+    local currentKey = defaultKey
+    local isBinding = false
+
+    local function updateVisuals()
+        if currentGuiStyle == "GUI1" then
+            toggleBtn.BackgroundTransparency = 1
+            toggleBtn.BorderSizePixel = 0
+            toggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+            toggleBtn.Text = defaultText
+            checkBox.Visible = true
+            checkBox.Text = isToggled and "✓" or ""
+        else
+            toggleBtn.BackgroundTransparency = 0
+            toggleBtn.BorderSizePixel = 1
+            toggleBtn.TextXAlignment = Enum.TextXAlignment.Center
+            toggleBtn.Text = defaultText .. " (" .. (isToggled and "ON" or "OFF") .. ")"
+            toggleBtn.BackgroundColor3 = isToggled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+            checkBox.Visible = false
+        end
+    end
+
+    local function executeToggle()
+        isToggled = not isToggled
+        updateVisuals()
+        if onToggleCallback then
+            onToggleCallback(isToggled)
+        end
+    end
+
+    local function forceResetOff()
+        if isToggled then
+            isToggled = false
+            updateVisuals()
+            if onToggleCallback then
+                onToggleCallback(false)
+            end
+        end
+    end
+    table.insert(resetCallbacks, forceResetOff)
+
+    toggleBtn.MouseButton1Click:Connect(executeToggle)
+    checkBox.MouseButton1Click:Connect(executeToggle)
+
+    keybindBox.MouseButton1Click:Connect(function()
+        isBinding = true
+        keybindBox.Text = "..."
+        keybindBox.TextColor3 = Color3.fromRGB(255, 255, 0)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if isBinding then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
+                    currentKey = nil
+                    keybindBox.Text = "None"
+                else
+                    currentKey = input.KeyCode
+                    keybindBox.Text = currentKey.Name
+                end
+                keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+                isBinding = false
+            end
+        elseif not gameProcessed and currentKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
+            executeToggle()
+        end
+    end)
+
+    table.insert(toggleButtonsRegistry, updateVisuals)
+    return toggleBtn, keybindBox, mainFrame
+end
+
+local function setGuiStyle(styleName)
+    currentGuiStyle = styleName
+    if styleName == "GUI1" then
+        MainFrame.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
+        MainFrame.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        TitleBar.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
+        TitleBar.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
+        Sidebar.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        ContentArea.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
+    else
+        MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        TitleBar.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        Sidebar.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    end
+
+    for _, updateFunc in ipairs(toggleButtonsRegistry) do
+        updateFunc()
+    end
 end
