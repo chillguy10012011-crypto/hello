@@ -262,87 +262,47 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
--- // BỔ SUNG: TÍNH NĂNG HIỂN THỊ TỌA ĐỘ (POSITION DISPLAY)
-local ShowCoordToggle = false
-local coordMode = 1 -- 1: Tọa độ nhân vật, 2: Tọa độ Part được chọn
-local selectedPart = nil
-local selectedPartHighlight = nil
 
--- Tạo Text hiển thị tọa độ trên UI
-local CoordDisplayBox = createStyledTextBox(VisualSlide, "Coordinates", UDim2.new(0.025, 0, 0, 445), UDim2.new(0.95, 0, 0, 22))
-CoordDisplayBox.Text = "Tọa độ: [X: 0, Y: 0, Z: 0]"
-CoordDisplayBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-CoordDisplayBox.TextEditable = false
+-- // THÊM NÚT: TELEPORT TO SPAWN PARTS
+local TeleportSpawnToggle = false
 
--- Nút chuyển Mode tọa độ (Mode 1 / Mode 2)
-local CoordModeButton = createKeybindButton(VisualSlide, "Mode Tọa độ: Nhân vật", UDim2.new(0.025, 0, 0, 471), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    -- Nút bấm chuyển chế độ (state ở đây dùng làm cờ hoặc thay đổi qua lại)
-    if coordMode == 1 then
-        coordMode = 2
-        -- Cập nhật lại text nút (nếu hàm tạo nút hỗ trợ, hoặc bạn có thể click để đổi mode)
-    else
-        coordMode = 1
-        if selectedPartHighlight then selectedPartHighlight:Destroy() selectedPartHighlight = nil end
-        selectedPart = nil
-    end
-end)
-
--- Nút Bật/Tắt hiển thị Tọa độ
-createKeybindButton(VisualSlide, "Hiện Tọa độ", UDim2.new(0.025, 0, 0, 504), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    ShowCoordToggle = state
-    if not ShowCoordToggle then
-        CoordDisplayBox.Text = "Tọa độ: Đã tắt"
-        if selectedPartHighlight then 
-            selectedPartHighlight:Destroy() 
-            selectedPartHighlight = nil 
-        end
-    end
-end)
-
--- Xử lý chọn Part khi ở Mode 2 bằng cách click chuột
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not ShowCoordToggle or coordMode ~= 2 then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
-        local mouse = LocalPlayer:GetMouse()
-        local target = mouse.Target
-        if target and target:IsA("BasePart") then
-            selectedPart = target
-            
-            -- Xóa viền cũ nếu có
-            if selectedPartHighlight then selectedPartHighlight:Destroy() end
-            
-            -- Tạo viền Highlight cho Part được chọn
-            selectedPartHighlight = Instance.new("Highlight")
-            selectedPartHighlight.Name = "SelectedPartHighlight"
-            selectedPartHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            selectedPartHighlight.FillColor = Color3.fromRGB(0, 255, 128)
-            selectedPartHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            selectedPartHighlight.Parent = selectedPart
-        end
-    end
-end)
-
--- Vòng lặp cập nhật tọa độ liên tục
-RunService.RenderStepped:Connect(function()
-    if not ShowCoordToggle then return end
+createKeybindButton(VisualSlide, "TP Spawn Parts", UDim2.new(0.025, 0, 0, 445), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    TeleportSpawnToggle = state
     
-    if coordMode == 1 then
-        -- Mode 1: Hiển thị tọa độ nhân vật của bản thân
-        local char = LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local pos = hrp.Position
-            CoordDisplayBox.Text = string.format("Tọa độ (Nhân vật) - X: %.1f, Y: %.1f, Z: %.1f", pos.X, pos.Y, pos.Z)
-        else
-            CoordDisplayBox.Text = "Tọa độ: Không tìm thấy nhân vật"
-        end
-    elseif coordMode == 2 then
-        -- Mode 2: Hiển thị tọa độ Part được chọn
-        if selectedPart and selectedPart.Parent then
-            local pos = selectedPart.Position
-            CoordDisplayBox.Text = string.format("Tọa độ (Part: %s) - X: %.1f, Y: %.1f, Z: %.1f", selectedPart.Name, pos.X, pos.Y, pos.Z)
-        else
-            CoordDisplayBox.Text = "Tọa độ: Chưa chọn Part nào (Click vào vật thể)"
-        end
+    if TeleportSpawnToggle then
+        task.spawn(function()
+            local visitedSpawns = {}
+            while TeleportSpawnToggle do
+                local character = LocalPlayer.Character
+                local hrp = character and character:FindFirstChild("HumanoidRootPart")
+                
+                if hrp then
+                    local nearestSpawn = nil
+                    local shortestDistance = math.huge
+                    
+                    -- Tìm SpawnLocation hoặc BasePart có tên/loại liên quan đến spawn chưa được ghé thăm
+                    for _, obj in pairs(Workspace:GetDescendants()) do
+                        if (obj:IsA("SpawnLocation") or (obj:IsA("BasePart") and obj.Name:lower():find("spawn"))) and not visitedSpawns[obj] then
+                            local distance = (hrp.Position - obj.Position).Magnitude
+                            if distance < shortestDistance then
+                                shortestDistance = distance
+                                nearestSpawn = obj
+                            end
+                        end
+                    end
+                    
+                    if nearestSpawn then
+                        visitedSpawns[nearestSpawn] = true -- Đánh dấu đã qua để tránh trùng
+                        hrp.CFrame = nearestSpawn.CFrame + Vector3.new(0, 3, 0) -- Dịch chuyển lên trên spawn một chút
+                    else
+                        -- Nếu đã đi hết các điểm spawn thì dừng hoặc reset lại danh sách
+                        break
+                    end
+                end
+                
+                task.wait(0.5) -- Khoảng thời gian giữa mỗi lần dịch chuyển là 0.5s
+            end
+            TeleportSpawnToggle = false
+        end)
     end
 end)
