@@ -1,4 +1,4 @@
--- // PHẦN 5: SLIDE VISUAL
+-- // PHẦN 5: SLIDE VISUAL (Đã tích hợp hệ thống Teleport 3 Nút & 2 Mode GUI)
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
 
@@ -263,51 +263,246 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
     end
 end)
 
--- // TÍNH NĂNG MỚI: AUTO SPAWN TP
-local AutoSpawnToggle = false
-local visitedSpawns = {}
+-- // TÍNH NĂNG MỚI: HỆ THỐNG 3 NÚT (TOGGLE, 3 CHẤM MODE, +/- MỞ GUI)
+local featureEnabled = false
+local currentMode = 1 -- Mặc định mode 1
+local guiVisible = false
+local floatingGuiInstance = nil
 
-local function getNearestUnvisitedSpawn(hrpPos)
-    local nearest = nil
-    local shortestDist = math.huge
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if (obj:IsA("SpawnLocation") or (obj:IsA("BasePart") and obj.Name:lower():find("spawn"))) and not visitedSpawns[obj] then
-            local dist = (obj.Position - hrpPos).Magnitude
-            if dist < shortestDist then
-                shortestDist = dist
-                nearest = obj
-            end
-        end
+-- Dữ liệu lưu điểm
+local savedPointMode1 = nil
+local savedPointsMode2 = {}
+
+-- Khung Popup chỉnh thông số Mode (cho nút 3 chấm)
+local ModePopup = Instance.new("Frame")
+ModePopup.Size = UDim2.new(0, 180, 0, 80)
+ModePopup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ModePopup.BorderColor3 = Color3.fromRGB(0, 170, 255)
+ModePopup.BorderSizePixel = 1
+ModePopup.Visible = false
+ModePopup.ZIndex = 100
+ModePopup.Parent = ScreenGui
+
+local ModePopupTitle = Instance.new("TextLabel")
+ModePopupTitle.Size = UDim2.new(1, 0, 0, 25)
+ModePopupTitle.BackgroundTransparency = 1
+ModePopupTitle.Text = "CHỌN MODE"
+ModePopupTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+ModePopupTitle.Font = Enum.Font.SourceSansBold
+ModePopupTitle.TextSize = 13
+ModePopupTitle.ZIndex = 101
+ModePopupTitle.Parent = ModePopup
+
+local Mode1Btn = createStyledButton(ModePopup, "Mode 1 (1 Điểm)", UDim2.new(0.05, 0, 0, 30), UDim2.new(0.9, 0, 0, 22))
+Mode1Btn.ZIndex = 101
+local Mode2Btn = createStyledButton(ModePopup, "Mode 2 (Đa Điểm)", UDim2.new(0.05, 0, 0, 55), UDim2.new(0.9, 0, 0, 22))
+Mode2Btn.ZIndex = 101
+
+-- Khai báo hàm tạo Floating GUI (GUI nổi trên màn hình)
+local updateFloatingGuiContent -- forward declaration
+
+local function destroyFloatingGui()
+    if floatingGuiInstance then
+        floatingGuiInstance:Destroy()
+        floatingGuiInstance = nil
     end
-    return nearest
+    guiVisible = false
 end
 
-task.spawn(function()
-    while true do
-        if AutoSpawnToggle then
+local function createFloatingGui()
+    if floatingGuiInstance then floatingGuiInstance:Destroy() end
+
+    local fGui = Instance.new("ScreenGui")
+    fGui.Name = "TeleportFloatingGui"
+    fGui.ResetOnSpawn = false
+    pcall(function() fGui.Parent = CoreGui end)
+    if not fGui.Parent then fGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+    local mainBox = Instance.new("Frame")
+    mainBox.Name = "MainBox"
+    mainBox.Size = UDim2.new(0, 220, 0, currentMode == 1 and 110 or 220)
+    mainBox.Position = UDim2.new(0.4, 0, 0.4, 0)
+    mainBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    mainBox.BorderSizePixel = 2
+    mainBox.Active = true
+    mainBox.Draggable = true
+    mainBox.Parent = fGui
+
+    local titleBar = Instance.new("TextLabel")
+    titleBar.Size = UDim2.new(1, 0, 0, 25)
+    titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    titleBar.TextColor3 = Color3.fromRGB(0, 170, 255)
+    titleBar.Font = Enum.Font.SourceSansBold
+    titleBar.TextSize = 13
+    titleBar.Text = currentMode == 1 and "TP Control [Mode 1]" or "TP Control [Mode 2]"
+    titleBar.Parent = mainBox
+
+    -- Nội dung GUI Mode 1 hoặc Mode 2
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Name = "ContentFrame"
+    contentFrame.Size = UDim2.new(1, -10, 1, -30)
+    contentFrame.Position = UDim2.new(0, 5, 0, 28)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = mainBox
+
+    if currentMode == 1 then
+        local saveBtn = createStyledButton(contentFrame, "Lưu Vị Trí Hiện Tại", UDim2.new(0, 0, 0, 5), UDim2.new(1, 0, 0, 32))
+        local teleBtn = createStyledButton(contentFrame, "Dịch Chuyển (Chưa sẵn sàng)", UDim2.new(0, 0, 0, 42), UDim2.new(1, 0, 0, 32))
+        teleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- Mặc định chưa sáng
+
+        -- Kiểm tra trạng thái nếu đã từng lưu trước đó
+        if savedPointMode1 then
+            teleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+            teleBtn.Text = "Dịch Chuyển Đến Điểm Đã Lưu"
+        end
+
+        saveBtn.MouseButton1Click:Connect(function()
             local char = LocalPlayer.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if hrp then
-                local targetSpawn = getNearestUnvisitedSpawn(hrp.Position)
-                if not targetSpawn then
-                    -- Reset lại danh sách đã quét nếu đã đi qua hết các spawn
-                    visitedSpawns = {}
-                    targetSpawn = getNearestUnvisitedSpawn(hrp.Position)
-                end
-                
-                if targetSpawn then
-                    visitedSpawns[targetSpawn] = true
-                    hrp.CFrame = targetSpawn.CFrame + Vector3.new(0, 3, 0)
+                savedPointMode1 = hrp.CFrame
+                teleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+                teleBtn.Text = "Dịch Chuyển Đến Điểm Đã Lưu"
+                saveBtn.Text = "Đã Lưu Thành Công!"
+                task.delay(1, function() saveBtn.Text = "Lưu Vị Trí Hiện Tại" end)
+            end
+        end)
+
+        teleBtn.MouseButton1Click:Connect(function()
+            if savedPointMode1 then
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.CFrame = savedPointMode1
                 end
             end
-        end
-        task.wait(0.5)
-    end
-end)
+        end)
+    else
+        -- Mode 2: Đa điểm
+        local saveBtn = createStyledButton(contentFrame, "Lưu Vị Trí Hiện Tại", UDim2.new(0, 0, 0, 5), UDim2.new(1, 0, 0, 28))
+        
+        local scrollList = Instance.new("ScrollingFrame")
+        scrollList.Size = UDim2.new(1, 0, 0, 145)
+        scrollList.Position = UDim2.new(0, 0, 0, 38)
+        scrollList.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        scrollList.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        scrollList.BorderSizePixel = 1
+        scrollList.ScrollBarThickness = 4
+        scrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scrollList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        scrollList.Parent = contentFrame
 
-createKeybindButton(VisualSlide, "Auto Spawn TP", UDim2.new(0.025, 0, 0, 455), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    AutoSpawnToggle = state
-    if not state then
-        visitedSpawns = {}
+        local listLayout = Instance.new("UIListLayout")
+        listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        listLayout.Padding = UDim.new(0, 3)
+        listLayout.Parent = scrollList
+
+        local function refreshList()
+            for _, child in ipairs(scrollList:GetChildren()) do
+                if child:IsA("Frame") then child:Destroy() end
+            end
+
+            for index, cframe in ipairs(savedPointsMode2) do
+                local itemFrame = Instance.new("Frame")
+                itemFrame.Size = UDim2.new(1, -4, 0, 28)
+                itemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                itemFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+                itemFrame.BorderSizePixel = 1
+                itemFrame.Parent = scrollList
+
+                local teleItemBtn = createStyledButton(itemFrame, "Điểm #" .. index, UDim2.new(0, 2, 0, 2), UDim2.new(1, -32, 1, -4))
+                teleItemBtn.TextSize = 12
+
+                teleItemBtn.MouseButton1Click:Connect(function()
+                    local char = LocalPlayer.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.CFrame = cframe
+                    end
+                end)
+
+                local delItemBtn = Instance.new("TextButton")
+                delItemBtn.Size = UDim2.new(0, 24, 1, -4)
+                delItemBtn.Position = UDim2.new(1, -26, 0, 2)
+                delItemBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                delItemBtn.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                delItemBtn.Text = "X"
+                delItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                delItemBtn.Font = Enum.Font.SourceSansBold
+                delItemBtn.TextSize = 12
+                delItemBtn.Parent = itemFrame
+
+                delItemBtn.MouseButton1Click:Connect(function()
+                    table.remove(savedPointsMode2, index)
+                    refreshList()
+                end)
+            end
+        end
+
+        saveBtn.MouseButton1Click:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                table.insert(savedPointsMode2, hrp.CFrame)
+                refreshList()
+                saveBtn.Text = "Đã Thêm Điểm Mới!"
+                task.delay(1, function() saveBtn.Text = "Lưu Vị Trí Hiện Tại" end)
+            end
+        end)
+
+        refreshList()
     end
-end)
+
+    floatingGuiInstance = fGui
+    guiVisible = true
+end
+
+-- Định nghĩa 3 Nút trên Slide (đặt ở vị trí Y = 456)
+local ToggleFuncBtn = Instance.new("TextButton")
+ToggleFuncBtn.Size = UDim2.new(0.48, 0, 0, 28)
+ToggleFuncBtn.Position = UDim2.new(0.025, 0, 0, 456)
+ToggleFuncBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleFuncBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+ToggleFuncBtn.BorderSizePixel = 1
+ToggleFuncBtn.Text = "TP Tool: OFF"
+ToggleFuncBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleFuncBtn.Font = Enum.Font.SourceSans
+ToggleFuncBtn.TextSize = 13
+ToggleFuncBtn.Parent = VisualSlide
+table.insert(registeredBorders, ToggleFuncBtn)
+table.insert(registeredTexts, ToggleFuncBtn)
+
+local ModeDotsBtn = Instance.new("TextButton")
+ModeDotsBtn.Size = UDim2.new(0.20, 0, 0, 28)
+ModeDotsBtn.Position = UDim2.new(0.515, 0, 0, 456)
+ModeDotsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ModeDotsBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+ModeDotsBtn.BorderSizePixel = 1
+ModeDotsBtn.Text = "..."
+ModeDotsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ModeDotsBtn.Font = Enum.Font.SourceSansBold
+ModeDotsBtn.TextSize = 14
+ModeDotsBtn.Parent = VisualSlide
+table.insert(registeredBorders, ModeDotsBtn)
+table.insert(registeredTexts, ModeDotsBtn)
+
+local ToggleGuiBtn = Instance.new("TextButton")
+ToggleGuiBtn.Size = UDim2.new(0.235, 0, 0, 28)
+ToggleGuiBtn.Position = UDim2.new(0.725, 0, 0, 456)
+ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleGuiBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+ToggleGuiBtn.BorderSizePixel = 1
+ToggleGuiBtn.Text = "+ Mở GUI"
+ToggleGuiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleGuiBtn.Font = Enum.Font.SourceSansBold
+ToggleGuiBtn.TextSize = 13
+ToggleGuiBtn.Parent = VisualSlide
+table.insert(registeredBorders, ToggleGuiBtn)
+table.insert(registeredTexts, ToggleGuiBtn)
+
+-- Xử lý Nút 1: Bật tắt chức năng
+ToggleFuncBtn.MouseButton1Click:Connect(function()
+    featureEnabled = not featureEnabled
+    if featureEnabled then
+        ToggleFuncBtn.
