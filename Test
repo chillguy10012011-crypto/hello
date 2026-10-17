@@ -262,12 +262,13 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
--- // PHẦN 5: SLIDE VISUAL (Phần 2: Quản lý Vị Trí & Bảng Nổi 2 Mode)
+
+-- // PHẦN 5: SLIDE VISUAL (Phần 2: Quản lý Vị Trí & Bảng Nổi 2 Mode - Đã sửa lỗi nằm ngang)
 local currentTpMode = 1 -- Mặc định mode 1
 local savedPointSingle = nil
 local savedPointsList = {}
 
--- 2 nút nằm ngang bằng nhau, lắp đầy khung
+-- Sửa lại tọa độ X: Nút 1 từ 0.025 (bên trái), Nút 2 từ 0.505 (bên phải), chung tọa độ Y: 456 và chung chiều cao để nằm ngang hàng nhau
 local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.47, 0, 0, 28))
 local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.505, 0, 0, 456), UDim2.new(0.47, 0, 0, 28))
 
