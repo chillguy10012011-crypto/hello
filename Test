@@ -1,4 +1,4 @@
--- // PHẦN 5: SLIDE VISUAL (Đã tích hợp hệ thống Teleport 3 Nút & 2 Mode GUI)
+-- // PHẦN 5: SLIDE VISUAL (PHẦN 1)
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
 
@@ -262,8 +262,7 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
-
--- // TÍNH NĂNG MỚI: HỆ THỐNG 3 NÚT (TOGGLE, 3 CHẤM MODE, +/- MỞ GUI)
+-- // PHẦN 5: SLIDE VISUAL (PHẦN 2 - HỆ THỐNG 3 NÚT & TELEPORT GUI)
 local featureEnabled = false
 local currentMode = 1 -- Mặc định mode 1
 local guiVisible = false
@@ -297,9 +296,6 @@ local Mode1Btn = createStyledButton(ModePopup, "Mode 1 (1 Điểm)", UDim2.new(0
 Mode1Btn.ZIndex = 101
 local Mode2Btn = createStyledButton(ModePopup, "Mode 2 (Đa Điểm)", UDim2.new(0.05, 0, 0, 55), UDim2.new(0.9, 0, 0, 22))
 Mode2Btn.ZIndex = 101
-
--- Khai báo hàm tạo Floating GUI (GUI nổi trên màn hình)
-local updateFloatingGuiContent -- forward declaration
 
 local function destroyFloatingGui()
     if floatingGuiInstance then
@@ -338,7 +334,6 @@ local function createFloatingGui()
     titleBar.Text = currentMode == 1 and "TP Control [Mode 1]" or "TP Control [Mode 2]"
     titleBar.Parent = mainBox
 
-    -- Nội dung GUI Mode 1 hoặc Mode 2
     local contentFrame = Instance.new("Frame")
     contentFrame.Name = "ContentFrame"
     contentFrame.Size = UDim2.new(1, -10, 1, -30)
@@ -349,9 +344,8 @@ local function createFloatingGui()
     if currentMode == 1 then
         local saveBtn = createStyledButton(contentFrame, "Lưu Vị Trí Hiện Tại", UDim2.new(0, 0, 0, 5), UDim2.new(1, 0, 0, 32))
         local teleBtn = createStyledButton(contentFrame, "Dịch Chuyển (Chưa sẵn sàng)", UDim2.new(0, 0, 0, 42), UDim2.new(1, 0, 0, 32))
-        teleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- Mặc định chưa sáng
+        teleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
-        -- Kiểm tra trạng thái nếu đã từng lưu trước đó
         if savedPointMode1 then
             teleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
             teleBtn.Text = "Dịch Chuyển Đến Điểm Đã Lưu"
@@ -379,7 +373,6 @@ local function createFloatingGui()
             end
         end)
     else
-        -- Mode 2: Đa điểm
         local saveBtn = createStyledButton(contentFrame, "Lưu Vị Trí Hiện Tại", UDim2.new(0, 0, 0, 5), UDim2.new(1, 0, 0, 28))
         
         local scrollList = Instance.new("ScrollingFrame")
@@ -501,8 +494,50 @@ ToggleGuiBtn.Parent = VisualSlide
 table.insert(registeredBorders, ToggleGuiBtn)
 table.insert(registeredTexts, ToggleGuiBtn)
 
--- Xử lý Nút 1: Bật tắt chức năng
 ToggleFuncBtn.MouseButton1Click:Connect(function()
     featureEnabled = not featureEnabled
     if featureEnabled then
-        ToggleFuncBtn.
+        ToggleFuncBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        ToggleFuncBtn.Text = "TP Tool: ON"
+    else
+        ToggleFuncBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        ToggleFuncBtn.Text = "TP Tool: OFF"
+    end
+end)
+
+ModeDotsBtn.MouseButton1Click:Connect(function()
+    ModePopup.Visible = not ModePopup.Visible
+    if ModePopup.Visible then
+        local abs = ModeDotsBtn.AbsolutePosition
+        ModePopup.Position = UDim2.fromOffset(abs.X, abs.Y - 85)
+    end
+end)
+
+Mode1Btn.MouseButton1Click:Connect(function()
+    currentMode = 1
+    ModePopup.Visible = false
+    ModeDotsBtn.Text = "... (Mode 1)"
+    if guiVisible then
+        createFloatingGui()
+    end
+end)
+
+Mode2Btn.MouseButton1Click:Connect(function()
+    currentMode = 2
+    ModePopup.Visible = false
+    ModeDotsBtn.Text = "... (Mode 2)"
+    if guiVisible then
+        createFloatingGui()
+    end
+end)
+
+ToggleGuiBtn.MouseButton1Click:Connect(function()
+    if guiVisible then
+        destroyFloatingGui()
+        ToggleGuiBtn.Text = "+ Mở GUI"
+    else
+        createFloatingGui()
+        ToggleGuiBtn.Text = "- Đóng GUI"
+    end
+end)
+
