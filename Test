@@ -263,46 +263,61 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
     end
 end)
 
--- // THÊM NÚT: TELEPORT TO SPAWN PARTS
-local TeleportSpawnToggle = false
+-- // NÚT MỚI: AUTO SPAWN TP
+local AutoSpawnTpToggle = false
 
-createKeybindButton(VisualSlide, "TP Spawn Parts", UDim2.new(0.025, 0, 0, 445), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    TeleportSpawnToggle = state
-    
-    if TeleportSpawnToggle then
+local function isSpawnPart(obj)
+    if obj:IsA("SpawnLocation") then return true end
+    if obj:IsA("BasePart") and string.find(string.lower(obj.Name), "spawn") then return true end
+    return false
+end
+
+createKeybindButton(VisualSlide, "Auto Spawn TP", UDim2.new(0.025, 0, 0, 450), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AutoSpawnTpToggle = state
+    if AutoSpawnTpToggle then
         task.spawn(function()
             local visitedSpawns = {}
-            while TeleportSpawnToggle do
-                local character = LocalPlayer.Character
-                local hrp = character and character:FindFirstChild("HumanoidRootPart")
-                
+            while AutoSpawnTpToggle do
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local nearestSpawn = nil
-                    local shortestDistance = math.huge
+                    -- Quét toàn bộ spawn part trong Workspace
+                    local spawns = {}
+                    for _, obj in ipairs(Workspace:GetDescendants()) do
+                        if isSpawnPart(obj) and not visitedSpawns[obj] then
+                            table.insert(spawns, obj)
+                        end
+                    end
                     
-                    -- Tìm SpawnLocation hoặc BasePart có tên/loại liên quan đến spawn chưa được ghé thăm
-                    for _, obj in pairs(Workspace:GetDescendants()) do
-                        if (obj:IsA("SpawnLocation") or (obj:IsA("BasePart") and obj.Name:lower():find("spawn"))) and not visitedSpawns[obj] then
-                            local distance = (hrp.Position - obj.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                nearestSpawn = obj
+                    -- Nếu đã đi qua hết tất cả các spawn, reset lại danh sách đánh dấu để lặp tiếp
+                    if #spawns == 0 then
+                        visitedSpawns = {}
+                        for _, obj in ipairs(Workspace:GetDescendants()) do
+                            if isSpawnPart(obj) then
+                                table.insert(spawns, obj)
                             end
                         end
                     end
                     
+                    -- Tìm spawn part gần nhất
+                    local nearestSpawn = nil
+                    local shortestDist = math.huge
+                    for _, spawn in ipairs(spawns) do
+                        local dist = (hrp.Position - spawn.Position).Magnitude
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            nearestSpawn = spawn
+                        end
+                    end
+                    
+                    -- Dịch chuyển và đánh dấu
                     if nearestSpawn then
-                        visitedSpawns[nearestSpawn] = true -- Đánh dấu đã qua để tránh trùng
-                        hrp.CFrame = nearestSpawn.CFrame + Vector3.new(0, 3, 0) -- Dịch chuyển lên trên spawn một chút
-                    else
-                        -- Nếu đã đi hết các điểm spawn thì dừng hoặc reset lại danh sách
-                        break
+                        visitedSpawns[nearestSpawn] = true
+                        hrp.CFrame = nearestSpawn.CFrame + Vector3.new(0, 3, 0)
                     end
                 end
-                
-                task.wait(0.5) -- Khoảng thời gian giữa mỗi lần dịch chuyển là 0.5s
+                task.wait(0.5)
             end
-            TeleportSpawnToggle = false
         end)
     end
 end)
