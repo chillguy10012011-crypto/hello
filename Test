@@ -263,61 +263,51 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
     end
 end)
 
--- // NÚT MỚI: AUTO SPAWN TP
-local AutoSpawnTpToggle = false
+-- // TÍNH NĂNG MỚI: AUTO SPAWN TP
+local AutoSpawnToggle = false
+local visitedSpawns = {}
 
-local function isSpawnPart(obj)
-    if obj:IsA("SpawnLocation") then return true end
-    if obj:IsA("BasePart") and string.find(string.lower(obj.Name), "spawn") then return true end
-    return false
+local function getNearestUnvisitedSpawn(hrpPos)
+    local nearest = nil
+    local shortestDist = math.huge
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if (obj:IsA("SpawnLocation") or (obj:IsA("BasePart") and obj.Name:lower():find("spawn"))) and not visitedSpawns[obj] then
+            local dist = (obj.Position - hrpPos).Magnitude
+            if dist < shortestDist then
+                shortestDist = dist
+                nearest = obj
+            end
+        end
+    end
+    return nearest
 end
 
-createKeybindButton(VisualSlide, "Auto Spawn TP", UDim2.new(0.025, 0, 0, 450), UDim2.new(0.95, 0, 0, 28), nil, function(state)
-    AutoSpawnTpToggle = state
-    if AutoSpawnTpToggle then
-        task.spawn(function()
-            local visitedSpawns = {}
-            while AutoSpawnTpToggle do
-                local char = LocalPlayer.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    -- Quét toàn bộ spawn part trong Workspace
-                    local spawns = {}
-                    for _, obj in ipairs(Workspace:GetDescendants()) do
-                        if isSpawnPart(obj) and not visitedSpawns[obj] then
-                            table.insert(spawns, obj)
-                        end
-                    end
-                    
-                    -- Nếu đã đi qua hết tất cả các spawn, reset lại danh sách đánh dấu để lặp tiếp
-                    if #spawns == 0 then
-                        visitedSpawns = {}
-                        for _, obj in ipairs(Workspace:GetDescendants()) do
-                            if isSpawnPart(obj) then
-                                table.insert(spawns, obj)
-                            end
-                        end
-                    end
-                    
-                    -- Tìm spawn part gần nhất
-                    local nearestSpawn = nil
-                    local shortestDist = math.huge
-                    for _, spawn in ipairs(spawns) do
-                        local dist = (hrp.Position - spawn.Position).Magnitude
-                        if dist < shortestDist then
-                            shortestDist = dist
-                            nearestSpawn = spawn
-                        end
-                    end
-                    
-                    -- Dịch chuyển và đánh dấu
-                    if nearestSpawn then
-                        visitedSpawns[nearestSpawn] = true
-                        hrp.CFrame = nearestSpawn.CFrame + Vector3.new(0, 3, 0)
-                    end
+task.spawn(function()
+    while true do
+        if AutoSpawnToggle then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local targetSpawn = getNearestUnvisitedSpawn(hrp.Position)
+                if not targetSpawn then
+                    -- Reset lại danh sách đã quét nếu đã đi qua hết các spawn
+                    visitedSpawns = {}
+                    targetSpawn = getNearestUnvisitedSpawn(hrp.Position)
                 end
-                task.wait(0.5)
+                
+                if targetSpawn then
+                    visitedSpawns[targetSpawn] = true
+                    hrp.CFrame = targetSpawn.CFrame + Vector3.new(0, 3, 0)
+                end
             end
-        end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+createKeybindButton(VisualSlide, "Auto Spawn TP", UDim2.new(0.025, 0, 0, 455), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AutoSpawnToggle = state
+    if not state then
+        visitedSpawns = {}
     end
 end)
