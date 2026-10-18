@@ -262,7 +262,7 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
--- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Dạng nút nhấn có hỗ trợ Keybind)
+-- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Nút bấm thực thi kèm Keybutton)
 local currentTpMode = 1
 local savedPointSingle = nil
 local savedPointsList = {}
@@ -333,34 +333,18 @@ Mode2Container.BackgroundTransparency = 1
 Mode2Container.Visible = false
 Mode2Container.Parent = FloatMainFrame
 
--- Hàm trợ giúp tạo nút nhấn hành động dạng Keybind (nhấn là thực thi, không giữ trạng thái On/Off)
-local function createActionKeybindButton(parent, text, pos, size, callback)
-    local btn, keyBox, mainFr = createKeybindButton(parent, text, pos, size, nil, function(state)
-        -- Bỏ qua trạng thái Toggle của hàm gốc, mỗi lần bấm/nhấn phím là kích hoạt callback luôn
-        callback()
-    end)
-    -- Ẩn bớt checkbox bật/tắt (vì đây là nút hành động 1 lần, không phải công tắc)
-    local chk = mainFr:FindFirstChildOfClass("TextButton")
-    -- Chỉnh lại text hiển thị cho gọn gàng dạng nút nhấn
-    btn.Text = text
-    return btn
-end
-
--- --- NỘI DUNG MODE 1 (Nút nhấn hành động + Keybind) ---
-local function actionSavePoint1()
+-- --- NỘI DUNG MODE 1 (Giữ nguyên dạng nút bấm thực thi, có thêm Keybind phụ bên cạnh) ---
+local actionSaveFunc = function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         savedPointSingle = hrp.CFrame
-        -- Sáng nút dịch chuyển bên dưới lên báo hiệu đã sẵn sàng
-        TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-        TeleportM1Btn.BorderColor3 = Color3.fromRGB(0, 230, 255)
-        TeleportM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TeleportM1Btn.Text = "Dịch Chuyển Ngay (Sẵn Sàng)"
+        -- Cập nhật màu nút dịch chuyển sáng lên khi đã lưu
+        if _G.UpdateTeleportBtnVisual then _G.UpdateTeleportBtnVisual(true) end
     end
 end
 
-local function actionTeleport1()
+local actionTpFunc = function()
     if savedPointSingle then
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -370,27 +354,38 @@ local function actionTeleport1()
     end
 end
 
-local SavePosM1Btn = createStyledButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32))
-SavePosM1Btn.MouseButton1Click:Connect(actionSavePoint1)
+-- Tạo nút bấm Lưu Vị Trí kèm phím tắt gán nhanh
+local SavePosM1Btn, _, _ = createKeybindButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, function()
+    actionSaveFunc()
+end)
 
-local TeleportM1Btn = createStyledButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38))
+-- Tạo nút bấm Dịch Chuyển kèm phím tắt gán nhanh
+local TeleportM1Btn, _, _ = createKeybindButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, function()
+    actionTpFunc()
+end)
+
+-- Gán hàm cập nhật trạng thái hiển thị sáng/tối cho nút Dịch Chuyển
 TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-TeleportM1Btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
 TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-TeleportM1Btn.MouseButton1Click:Connect(actionTeleport1)
 
--- --- NỘI DUNG MODE 2 (Nút nhấn hành động + Keybind) ---
-local function actionSavePoint2()
+_G.UpdateTeleportBtnVisual = function(isReady)
+    if isReady then
+        TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        TeleportM1Btn.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        TeleportM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TeleportM1Btn.Text = "Dịch Chuyển Ngay (Sẵn Sàng)"
+    end
+end
+
+-- --- NỘI DUNG MODE 2 ---
+local SavePosM2Btn, _, _ = createKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         table.insert(savedPointsList, hrp.CFrame)
         refreshPointsList()
     end
-end
-
-local SavePosM2Btn = createStyledButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30))
-SavePosM2Btn.MouseButton1Click:Connect(actionSavePoint2)
+end)
 
 local PointsScrollingFrame = Instance.new("ScrollingFrame")
 PointsScrollingFrame.Size = UDim2.new(0.9, 0, 0.68, 0)
@@ -422,7 +417,7 @@ function refreshPointsList()
         local gotoBtn = Instance.new("TextButton")
         gotoBtn.Size = UDim2.new(1, -30, 1, 0)
         gotoBtn.BackgroundTransparency = 1
-        gotoBtn.Text = "Điểm số " .. index
+        gotoBtn.Text = "Điểm số " + index
         gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         gotoBtn.Font = Enum.Font.SourceSans
         gotoBtn.TextSize = 12
@@ -438,7 +433,6 @@ function refreshPointsList()
         end)
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = Instance.new("TextButton") and UDim2.new(0, 24, 0, 24) or nil
         deleteBtn.Size = UDim2.new(0, 24, 0, 24)
         deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
         deleteBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
