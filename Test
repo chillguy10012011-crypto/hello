@@ -1,4 +1,4 @@
--- // PHẦN 5: SLIDE VISUAL (Phần 1: Chức năng hiển thị & X-Ray)
+-- // PHẦN 1: SLIDE VISUAL & QUẢN LÝ VỊ TRÍ (ESP, Tracer, X-Ray, Bảng nổi)
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
 
@@ -27,7 +27,7 @@ local function updateESP()
     end
 end
 
-createKeybindButton(VisualSlide, "Esp", UDim2.new(0.025, 0, 0, 297), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+createKeybindButton(VisualSlide, "Esp", UDim2.new(0.025, 0, 0, 10), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     EspToggle = state
     updateESP()
 end)
@@ -43,7 +43,7 @@ local function clearTracers()
     tracerDrawings = {}
 end
 
-createKeybindButton(VisualSlide, "Tracer", UDim2.new(0.025, 0, 0, 330), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+createKeybindButton(VisualSlide, "Tracer", UDim2.new(0.025, 0, 0, 43), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     TracerToggle = state
     if not TracerToggle then clearTracers() end
 end)
@@ -147,7 +147,7 @@ local function updateNames()
     end
 end
 
-createKeybindButton(VisualSlide, "Show Name", UDim2.new(0.025, 0, 0, 363), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+createKeybindButton(VisualSlide, "Show Name", UDim2.new(0.025, 0, 0, 76), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     ShowNameToggle = state
     updateNames()
 end)
@@ -157,13 +157,13 @@ local XrayToggle = false
 local originalTranspMap = {}
 local xrayDescendantConnection = nil
 
-local TranspBox = createStyledTextBox(VisualSlide, "50", UDim2.new(0.025, 0, 0, 396), UDim2.new(0.95, 0, 0, 22))
+local TranspBox = createStyledTextBox(VisualSlide, "50", UDim2.new(0.025, 0, 0, 109), UDim2.new(0.95, 0, 0, 22))
 TranspBox.Text = "Độ mờ X-Ray: 50% (Nhấn để chỉnh)"
 TranspBox.TextColor3 = Color3.fromRGB(0, 170, 255)
 
 local TranspSliderFrame = Instance.new("Frame")
 TranspSliderFrame.Size = UDim2.new(0.95, 0, 0, 15)
-TranspSliderFrame.Position = UDim2.new(0.025, 0, 0, 423)
+TranspSliderFrame.Position = UDim2.new(0.025, 0, 0, 133)
 TranspSliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 TranspSliderFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
 TranspSliderFrame.BorderSizePixel = 1
@@ -243,7 +243,7 @@ TranspBox.FocusLost:Connect(function()
     else TranspBox.Text = "Độ mờ X-Ray: " .. tostring(xrayTransparencyPct) .. "% (Nhấn để chỉnh)" end
 end)
 
-local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2.new(0.025, 0, 0, 396), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2.new(0.025, 0, 0, 155), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     XrayToggle = state
     updateXrayState()
     if XrayToggle then
@@ -263,12 +263,10 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
     end
 end)
 
--- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Dùng nút hành động chuẩn + Keybind gọn gàng)
 local currentTpMode = 1
 local savedPointSingle = nil
 local savedPointsList = {}
 
--- Hàm tạo nút hành động click thực thi nhưng có kèm khung gán phím tắt ở cạnh phải
 local function createActionKeybindButton(parent, text, pos, size, defaultKey, onClickCallback)
     size = size or UDim2.new(0.95, 0, 0, 30)
     local mainFrame = Instance.new("Frame")
@@ -339,8 +337,8 @@ local function createActionKeybindButton(parent, text, pos, size, defaultKey, on
     return btn, keybindBox, mainFrame
 end
 
-local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.95, 0, 0, 28))
-local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 489), UDim2.new(0.95, 0, 0, 28))
+local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 188), UDim2.new(0.95, 0, 0, 28))
+local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 221), UDim2.new(0.95, 0, 0, 28))
 
 ModeConfigBtn.MouseButton1Click:Connect(function()
     openParameterPopup(MainFrame, "Chọn Mode Teleport", {
@@ -359,7 +357,6 @@ ModeConfigBtn.MouseButton1Click:Connect(function()
     })
 end)
 
--- Tạo GUI nổi trên màn hình
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "CustomFloatingTeleportGui"
 FloatingGui.ResetOnSpawn = false
@@ -390,7 +387,6 @@ FloatTitle.Font = Enum.Font.SourceSansBold
 FloatTitle.TextSize = 14
 FloatTitle.Parent = FloatMainFrame
 
--- Container Mode 1 & 2
 local Mode1Container = Instance.new("Frame")
 Mode1Container.Size = UDim2.new(1, 0, 1, -30)
 Mode1Container.Position = UDim2.new(0, 0, 0, 30)
@@ -405,7 +401,6 @@ Mode2Container.BackgroundTransparency = 1
 Mode2Container.Visible = false
 Mode2Container.Parent = FloatMainFrame
 
--- --- NỘI DUNG MODE 1 ---
 local actionSaveFunc = function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -440,7 +435,6 @@ _G.UpdateTeleportBtnVisual = function(isReady)
     end
 end
 
--- --- NỘI DUNG MODE 2 ---
 local SavePosM2Btn, _, _ = createActionKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -513,7 +507,6 @@ function refreshPointsList()
     end
 end
 
--- Nút Toggle mở/đóng bảng nổi kèm đổi icon [+] sang [-]
 local isFloatGuiOpen = false
 ToggleGuiBtn.MouseButton1Click:Connect(function()
     isFloatGuiOpen = not isFloatGuiOpen
@@ -535,13 +528,13 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
--- // TÍCH HỢP AIMLOCK VÀO SLIDE VISUAL
+-- // PHẦN 2: TÍCH HỢP AIMLOCK TOÀN DIỆN VÀO SLIDE VISUAL
 local AimlockToggle = false
-local aimlockHitbone = "Head" -- Mặc định ngắm Đầu
-local aimlockFovSize = 100 -- Bán kính vòng tròn FOV
-local aimlockLockTime = 0.5 -- Thời gian khóa mục tiêu (giây)
+local aimlockHitbone = "Head" -- "Head" (Đầu) hoặc "HumanoidRootPart" (Thân)
+local aimlockFovSize = 100
+local aimlockLockTime = 0.5
+local aimlockAutoShoot = false
 
--- Tạo Drawing vòng tròn FOV hiển thị giữa màn hình
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Radius = aimlockFovSize
@@ -563,17 +556,17 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Nút Bật/Tắt Aimlock chính nằm trong Slide Visual
-local AimlockButton, _, AimlockFrame = createKeybindButton(VisualSlide, "Aimlock thông minh", UDim2.new(0.025, 0, 0, 522), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+local AimlockButton, _, AimlockFrame = createKeybindButton(VisualSlide, "Aimlock Thông Minh", UDim2.new(0.025, 0, 0, 254), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     AimlockToggle = state
 end)
 
--- Bảng thông số (Nút 3 chấm) cho Aimlock
 addParameterButton(AimlockFrame, "Thông số • Aimlock", {
     {name="Bán kính FOV", min=20, max=400, get=function() return aimlockFovSize end, set=function(v) aimlockFovSize = v end},
     {name="Thời gian khóa (s)", min=0.1, max=3, get=function() return aimlockLockTime end, set=function(v) aimlockLockTime = v end},
+    {name="Hitbone (1:Đầu, 2:Thân)", min=1, max=2, get=function() return aimlockHitbone == "Head" and 1 or 2 end, set=function(v) aimlockHitbone = math.floor(v+0.5) == 1 and "Head" or "HumanoidRootPart" end},
+    {name="Tự động bắn (0:Tắt, 1:Bật)", min=0, max=1, get=function() return aimlockAutoShoot and 1 or 0 end, set=function(v) aimlockAutoShoot = math.floor(v+0.5) == 1 end},
 })
--- // LOGIC AIMLOCK (Wallcheck & Team Check chống bắn nhầm fen)
+
 local function isTargetVisible(targetPart)
     local character = LocalPlayer.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -597,7 +590,6 @@ local function getBestTarget()
     local shortestDist = aimlockFovSize
 
     for _, p in pairs(Players:GetPlayers()) do
-        -- Lọc bản thân VÀ Lọc đồng đội (Team Check) chuẩn chỉnh 100%
         if p ~= LocalPlayer and p.Team ~= LocalPlayer.Team then
             local char = p.Character
             local humanoid = char and char:FindFirstChildOfClass("Humanoid")
@@ -633,6 +625,12 @@ RunService.RenderStepped:Connect(function()
             local currentCF = camera.CFrame
             local targetCF = CFrame.new(currentCF.Position, targetPart.Position)
             camera.CFrame = currentCF:Lerp(targetCF, math.clamp(RunService.RenderStepped:Wait() / aimlockLockTime, 0.05, 1))
+
+            if aimlockAutoShoot then
+                pcall(function()
+                    mouse1click()
+                end)
+            end
         end
     end
 end)
