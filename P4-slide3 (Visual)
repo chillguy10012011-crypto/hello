@@ -1,4 +1,4 @@
--- // PHẦN 5: SLIDE VISUAL
+-- // PHẦN 5: SLIDE VISUAL (Phần 1: Chức năng hiển thị & X-Ray)
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
 
@@ -262,3 +262,255 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
+
+-- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Dùng nút hành động chuẩn + Keybind gọn gàng)
+local currentTpMode = 1
+local savedPointSingle = nil
+local savedPointsList = {}
+
+-- Hàm tạo nút hành động click thực thi nhưng có kèm khung gán phím tắt ở cạnh phải
+local function createActionKeybindButton(parent, text, pos, size, defaultKey, onClickCallback)
+    size = size or UDim2.new(0.95, 0, 0, 30)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = size
+    mainFrame.Position = pos
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -42, 1, 0)
+    btn.Position = UDim2.new(0, 0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    btn.BorderSizePixel = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 13
+    btn.Parent = mainFrame
+
+    local keybindBox = Instance.new("TextButton")
+    keybindBox.Size = UDim2.new(0, 38, 1, 0)
+    keybindBox.Position = UDim2.new(1, -38, 0, 0)
+    keybindBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    keybindBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.BorderSizePixel = 1
+    keybindBox.Text = defaultKey and defaultKey.Name or "None"
+    keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.Font = Enum.Font.SourceSansBold
+    keybindBox.TextSize = 12
+    keybindBox.Parent = mainFrame
+
+    table.insert(registeredBorders, btn)
+    table.insert(registeredBorders, keybindBox)
+    table.insert(registeredTexts, btn)
+
+    local currentKey = defaultKey
+    local isBinding = false
+
+    btn.MouseButton1Click:Connect(function()
+        if onClickCallback then onClickCallback() end
+    end)
+
+    keybindBox.MouseButton1Click:Connect(function()
+        isBinding = true
+        keybindBox.Text = "..."
+        keybindBox.TextColor3 = Color3.fromRGB(255, 255, 0)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if isBinding then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
+                    currentKey = nil
+                    keybindBox.Text = "None"
+                else
+                    currentKey = input.KeyCode
+                    keybindBox.Text = currentKey.Name
+                end
+                keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+                isBinding = false
+            end
+        elseif not gameProcessed and currentKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
+            if onClickCallback then onClickCallback() end
+        end
+    end)
+
+    return btn, keybindBox, mainFrame
+end
+
+local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.95, 0, 0, 28))
+local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 489), UDim2.new(0.95, 0, 0, 28))
+
+ModeConfigBtn.MouseButton1Click:Connect(function()
+    openParameterPopup(MainFrame, "Chọn Mode Teleport", {
+        {
+            name = "Mode (1 hoặc 2):",
+            min = 1,
+            max = 2,
+            get = function() return currentTpMode end,
+            set = function(val)
+                currentTpMode = math.floor(val + 0.5)
+                if currentTpMode < 1 then currentTpMode = 1 end
+                if currentTpMode > 2 then currentTpMode = 2 end
+                ModeConfigBtn.Text = "Cài đặt Mode (Mode: " .. currentTpMode .. ")"
+            end
+        }
+    })
+end)
+
+-- Tạo GUI nổi trên màn hình
+local FloatingGui = Instance.new("ScreenGui")
+FloatingGui.Name = "CustomFloatingTeleportGui"
+FloatingGui.ResetOnSpawn = false
+FloatingGui.Enabled = false
+pcall(function() FloatingGui.Parent = CoreGui end)
+if not FloatingGui.Parent then FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local FloatMainFrame = Instance.new("Frame")
+FloatMainFrame.Size = UDim2.new(0, 230, 0, 270)
+FloatMainFrame.Position = UDim2.new(0.4, 0, 0.3, 0)
+FloatMainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+FloatMainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+FloatMainFrame.BorderSizePixel = 2
+FloatMainFrame.Active = true
+FloatMainFrame.Draggable = true
+FloatMainFrame.Parent = FloatingGui
+
+enableDragging(FloatMainFrame)
+
+local FloatTitle = Instance.new("TextLabel")
+FloatTitle.Size = UDim2.new(1, 0, 0, 30)
+FloatTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FloatTitle.BorderColor3 = Color3.fromRGB(0, 170, 255)
+FloatTitle.BorderSizePixel = 1
+FloatTitle.Text = "ĐIỀU HƯỚNG VỊ TRÍ"
+FloatTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+FloatTitle.Font = Enum.Font.SourceSansBold
+FloatTitle.TextSize = 14
+FloatTitle.Parent = FloatMainFrame
+
+-- Container Mode 1 & 2
+local Mode1Container = Instance.new("Frame")
+Mode1Container.Size = UDim2.new(1, 0, 1, -30)
+Mode1Container.Position = UDim2.new(0, 0, 0, 30)
+Mode1Container.BackgroundTransparency = 1
+Mode1Container.Visible = true
+Mode1Container.Parent = FloatMainFrame
+
+local Mode2Container = Instance.new("Frame")
+Mode2Container.Size = UDim2.new(1, 0, 1, -30)
+Mode2Container.Position = UDim2.new(0, 0, 0, 30)
+Mode2Container.BackgroundTransparency = 1
+Mode2Container.Visible = false
+Mode2Container.Parent = FloatMainFrame
+
+-- --- NỘI DUNG MODE 1 ---
+local actionSaveFunc = function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        savedPointSingle = hrp.CFrame
+        if _G.UpdateTeleportBtnVisual then _G.UpdateTeleportBtnVisual(true) end
+    end
+end
+
+local actionTpFunc = function()
+    if savedPointSingle then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = savedPointSingle
+        end
+    end
+end
+
+local SavePosM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, actionSaveFunc)
+local TeleportM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, actionTpFunc)
+
+TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+_G.UpdateTeleportBtnVisual = function(isReady)
+    if isReady then
+        TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        TeleportM1Btn.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        TeleportM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TeleportM1Btn.Text = "Dịch Chuyển Ngay (Sẵn Sàng)"
+    end
+end
+
+-- --- NỘI DUNG MODE 2 ---
+local SavePosM2Btn, _, _ = createActionKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(savedPointsList, hrp.CFrame)
+        refreshPointsList()
+    end
+end)
+
+local PointsScrollingFrame = Instance.new("ScrollingFrame")
+PointsScrollingFrame.Size = UDim2.new(0.9, 0, 0.68, 0)
+PointsScrollingFrame.Position = UDim2.new(0.05, 0, 0.22, 0)
+PointsScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+PointsScrollingFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+PointsScrollingFrame.ScrollBarThickness = 4
+PointsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+PointsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PointsScrollingFrame.Parent = Mode2Container
+
+local PointsLayout = Instance.new("UIListLayout")
+PointsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PointsLayout.Padding = UDim.new(0, 4)
+PointsLayout.Parent = PointsScrollingFrame
+
+function refreshPointsList()
+    for _, child in ipairs(PointsScrollingFrame:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    
+    for index, pointCFrame in ipairs(savedPointsList) do
+        local pointItem = Instance.new("Frame")
+        pointItem.Size = UDim2.new(1, -4, 0, 28)
+        pointItem.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        pointItem.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        pointItem.Parent = PointsScrollingFrame
+        
+        local gotoBtn = Instance.new("TextButton")
+        gotoBtn.Size = UDim2.new(1, -30, 1, 0)
+        gotoBtn.BackgroundTransparency = 1
+        gotoBtn.Text = "Điểm số " .. index
+        gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        gotoBtn.Font = Enum.Font.SourceSans
+        gotoBtn.TextSize = 12
+        gotoBtn.TextXAlignment = Enum.TextXAlignment.Left
+        gotoBtn.Parent = pointItem
+        
+        gotoBtn.MouseButton1Click:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = pointCFrame
+            end
+        end)
+        
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24)
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        deleteBtn.BorderColor3 = Color3.fromRGB(255, 0, 0)
+        deleteBtn.Text = "X"
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.Font = Enum.Font.SourceSansBold
+        deleteBtn.TextSize = 12
+        deleteBtn.Parent = pointItem
+        
+        deleteBtn.MouseButton1Click:Connect(function()
+            table.remove(savedPointsList, index)
+            refreshPointsList()
+        end)
+    end
+end
+
+-
