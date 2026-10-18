@@ -262,10 +262,82 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
--- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Nút bấm thực thi kèm Keybutton)
+
+-- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Dùng nút hành động chuẩn + Keybind gọn gàng)
 local currentTpMode = 1
 local savedPointSingle = nil
 local savedPointsList = {}
+
+-- Hàm tạo nút hành động click thực thi nhưng có kèm khung gán phím tắt ở cạnh phải
+local function createActionKeybindButton(parent, text, pos, size, defaultKey, onClickCallback)
+    size = size or UDim2.new(0.95, 0, 0, 30)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = size
+    mainFrame.Position = pos
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -42, 1, 0)
+    btn.Position = UDim2.new(0, 0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    btn.BorderSizePixel = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 13
+    btn.Parent = mainFrame
+
+    local keybindBox = Instance.new("TextButton")
+    keybindBox.Size = UDim2.new(0, 38, 1, 0)
+    keybindBox.Position = UDim2.new(1, -38, 0, 0)
+    keybindBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    keybindBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.BorderSizePixel = 1
+    keybindBox.Text = defaultKey and defaultKey.Name or "None"
+    keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.Font = Enum.Font.SourceSansBold
+    keybindBox.TextSize = 12
+    keybindBox.Parent = mainFrame
+
+    table.insert(registeredBorders, btn)
+    table.insert(registeredBorders, keybindBox)
+    table.insert(registeredTexts, btn)
+
+    local currentKey = defaultKey
+    local isBinding = false
+
+    btn.MouseButton1Click:Connect(function()
+        if onClickCallback then onClickCallback() end
+    end)
+
+    keybindBox.MouseButton1Click:Connect(function()
+        isBinding = true
+        keybindBox.Text = "..."
+        keybindBox.TextColor3 = Color3.fromRGB(255, 255, 0)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if isBinding then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
+                    currentKey = nil
+                    keybindBox.Text = "None"
+                else
+                    currentKey = input.KeyCode
+                    keybindBox.Text = currentKey.Name
+                end
+                keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+                isBinding = false
+            end
+        elseif not gameProcessed and currentKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
+            if onClickCallback then onClickCallback() end
+        end
+    end)
+
+    return btn, keybindBox, mainFrame
+end
 
 local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.95, 0, 0, 28))
 local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 489), UDim2.new(0.95, 0, 0, 28))
@@ -333,13 +405,12 @@ Mode2Container.BackgroundTransparency = 1
 Mode2Container.Visible = false
 Mode2Container.Parent = FloatMainFrame
 
--- --- NỘI DUNG MODE 1 (Giữ nguyên dạng nút bấm thực thi, có thêm Keybind phụ bên cạnh) ---
+-- --- NỘI DUNG MODE 1 ---
 local actionSaveFunc = function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         savedPointSingle = hrp.CFrame
-        -- Cập nhật màu nút dịch chuyển sáng lên khi đã lưu
         if _G.UpdateTeleportBtnVisual then _G.UpdateTeleportBtnVisual(true) end
     end
 end
@@ -354,17 +425,9 @@ local actionTpFunc = function()
     end
 end
 
--- Tạo nút bấm Lưu Vị Trí kèm phím tắt gán nhanh
-local SavePosM1Btn, _, _ = createKeybindButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, function()
-    actionSaveFunc()
-end)
+local SavePosM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, actionSaveFunc)
+local TeleportM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, actionTpFunc)
 
--- Tạo nút bấm Dịch Chuyển kèm phím tắt gán nhanh
-local TeleportM1Btn, _, _ = createKeybindButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, function()
-    actionTpFunc()
-end)
-
--- Gán hàm cập nhật trạng thái hiển thị sáng/tối cho nút Dịch Chuyển
 TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
 
@@ -378,7 +441,7 @@ _G.UpdateTeleportBtnVisual = function(isReady)
 end
 
 -- --- NỘI DUNG MODE 2 ---
-local SavePosM2Btn, _, _ = createKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
+local SavePosM2Btn, _, _ = createActionKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -417,7 +480,7 @@ function refreshPointsList()
         local gotoBtn = Instance.new("TextButton")
         gotoBtn.Size = UDim2.new(1, -30, 1, 0)
         gotoBtn.BackgroundTransparency = 1
-        gotoBtn.Text = "Điểm số " + index
+        gotoBtn.Text = "Điểm số " .. index
         gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         gotoBtn.Font = Enum.Font.SourceSans
         gotoBtn.TextSize = 12
