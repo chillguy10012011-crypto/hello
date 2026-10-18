@@ -3,6 +3,7 @@ local moduleLinks = {
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P1-GUI",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P2-slide1 (Player)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P3-slide2 (Movement)",
+    "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/Test",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P5-slide4 (Spawn model)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P6-slide5 (Script Hub)",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P7-slide6 (Utility)",
@@ -30,25 +31,9 @@ if compiledCode ~= "" then
     if runFunc then
         local success, execErr = pcall(runFunc)
         if not success then
-            local errorMsg = "Lỗi khi chạy code tổng: " .. tostring(execErr)
-            warn(errorMsg)
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Lỗi Script",
-                    Text = tostring(execErr),
-                    Duration = 10
-                })
-            end)
+            warn("Lỗi khi chạy code tổng: " .. tostring(execErr))
         end
     else
-        local compileMsg = "Lỗi biên dịch code tổng: " .. tostring(err)
-        warn(compileMsg)
-        pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Lỗi Biên Dịch",
-                Text = tostring(err),
-                Duration = 10
-            })
-        end)
+        warn("Lỗi biên dịch code tổng: " .. tostring(err))
     end
 end
