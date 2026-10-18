@@ -1,10 +1,4 @@
---[[
-    NEW CONTROL PANEL - TEST BUILD
-    Gộp từ các file chức năng cũ, sắp xếp lại thành GUI mới.
-    Chưa tách loadstring/module ở bản này để dễ test toàn bộ trước.
-]]
-
--- // TỐI ƯU HÀM BẢO MẬT CLONEREF
+-- // Phần 1: Code GUI chính & Settings
 local function getService(serviceName)
     local rawService = game:GetService(serviceName)
     if cloneref then
@@ -13,7 +7,6 @@ local function getService(serviceName)
     return rawService
 end
 
--- // KHAI BÁO SERVICES
 local Players = getService("Players")
 local RunService = getService("RunService")
 local UserInputService = getService("UserInputService")
@@ -22,7 +15,6 @@ local Workspace = getService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = getService("CoreGui")
 
--- // HÀM KÉO THẢ (DRAGGABLE) DÙNG CHUNG
 local function enableDragging(frame, dragHandle)
     dragHandle = dragHandle or frame
     local dragging, dragInput, dragStart, startPos
@@ -55,7 +47,6 @@ local function enableDragging(frame, dragHandle)
     end)
 end
 
--- // TẠO GUI CHÍNH
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CustomControlGUI"
 ScreenGui.ResetOnSpawn = false
@@ -63,7 +54,6 @@ ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
--- // NÚT BẬT/TẮT HÌNH TRÒN (FLOATING BUTTON)
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "ToggleButton"
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -83,7 +73,6 @@ ToggleCorner.Parent = ToggleBtn
 
 enableDragging(ToggleBtn)
 
--- // KHUNG CHÍNH (MAIN FRAME)
 local baseWidth, baseHeight = 275, 175
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -124,7 +113,6 @@ CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 16
 CloseBtn.Parent = TitleBar
 
--- // NÚT SETTINGS (BÁNH RĂNG)
 local SettingsBtn = Instance.new("TextButton")
 SettingsBtn.Name = "SettingsButton"
 SettingsBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -149,29 +137,6 @@ SettingsPanel.Visible = false
 SettingsPanel.ZIndex = 20
 SettingsPanel.Parent = MainFrame
 
-local SettingsTitle = Instance.new("TextLabel")
-SettingsTitle.Size = UDim2.new(1, -45, 0, 30)
-SettingsTitle.Position = UDim2.new(0, 10, 0, 0)
-SettingsTitle.BackgroundTransparency = 1
-SettingsTitle.Text = "SETTINGS"
-SettingsTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
-SettingsTitle.Font = Enum.Font.SourceSansBold
-SettingsTitle.TextSize = 16
-SettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
-SettingsTitle.ZIndex = 21
-SettingsTitle.Parent = SettingsPanel
-
-local SettingsClose = Instance.new("TextButton")
-SettingsClose.Size = UDim2.new(0, 30, 0, 30)
-SettingsClose.Position = UDim2.new(1, -32, 0, 0)
-SettingsClose.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-SettingsClose.Text = "X"
-SettingsClose.TextColor3 = Color3.fromRGB(255,255,255)
-SettingsClose.Font = Enum.Font.SourceSansBold
-SettingsClose.TextSize = 14
-SettingsClose.ZIndex = 21
-SettingsClose.Parent = SettingsPanel
-
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
@@ -180,7 +145,6 @@ ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- // THANH BÊN NÚT SLIDE VÀ HÀM HỖ TRỢ GIAO DIỆN
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Size = UDim2.new(0.35, 0, 1, -30)
 Sidebar.Position = UDim2.new(0, 0, 0, 30)
@@ -204,13 +168,13 @@ ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 ContentArea.BorderSizePixel = 0
 ContentArea.Parent = MainFrame
 
-local slides = {}
-local registeredBackgrounds = {MainFrame, ContentArea}
-local registeredBorders = {MainFrame, TitleBar, Sidebar}
-local registeredTexts = {TitleText}
-local toggleButtonsRegistry = {} 
-local resetCallbacks = {} 
-local currentGuiStyle = "Default"
+getgenv().slides = getgenv().slides or {}
+getgenv().registeredBackgrounds = getgenv().registeredBackgrounds or {MainFrame, ContentArea}
+getgenv().registeredBorders = getgenv().registeredBorders or {MainFrame, TitleBar, Sidebar}
+getgenv().registeredTexts = getgenv().registeredTexts or {TitleText}
+getgenv().toggleButtonsRegistry = getgenv().toggleButtonsRegistry or {}
+getgenv().resetCallbacks = getgenv().resetCallbacks or {}
+getgenv().currentGuiStyle = getgenv().currentGuiStyle or "Default"
 table.insert(registeredBackgrounds, SettingsPanel)
 table.insert(registeredBorders, SettingsPanel)
 
@@ -308,9 +272,7 @@ local function createStyledTextBox(parent, placeholder, pos, size)
     return box
 end
 
-local ParameterPopup
-local ParameterPopupBody
-local ParameterPopupTitle
+local ParameterPopup, ParameterPopupBody, ParameterPopupTitle
 
 local function closeParameterPopup()
     if ParameterPopup then ParameterPopup.Visible = false end
@@ -427,7 +389,6 @@ end
 
 local function createKeybindButton(parent, defaultText, pos, size, defaultKey, onToggleCallback)
     size = size or UDim2.new(0.95, 0, 0, 30)
-    
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = size
     mainFrame.Position = pos
@@ -546,7 +507,6 @@ local function createKeybindButton(parent, defaultText, pos, size, defaultKey, o
     end)
 
     table.insert(toggleButtonsRegistry, updateVisuals)
-
     return toggleBtn, keybindBox, mainFrame
 end
 
@@ -574,7 +534,7 @@ local function setGuiStyle(styleName)
         updateFunc()
     end
 end
-
+-- // Phần 2: Slide Player
 local Slide1 = createSlide("Player")
 Slide1.Visible = true
 
@@ -596,7 +556,6 @@ SelectedLbl.Parent = Slide1
 
 table.insert(registeredBorders, SelectedLbl)
 
--- // DANH SÁCH NGƯỜI CHƠI
 local PlayerListOpen = true
 local PlayerListRowHeight = 34
 
@@ -633,74 +592,49 @@ local UIList = Instance.new("UIListLayout")
 UIList.Padding = UDim.new(0, 2)
 UIList.Parent = PlayerList
 
--- Lưu vị trí gốc của các thành phần nằm bên dưới bảng người chơi.
--- Khi bảng mở rộng/thu nhỏ, các thành phần này sẽ tự động dời xuống/lên.
 local originalPlayerListPositions = nil
 
 local function getPlayerCount()
     local count = 0
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            count = count + 1
-        end
+        if p ~= LocalPlayer then count = count + 1 end
     end
     return count
 end
 
 local function getPlayerListHeight()
     local count = getPlayerCount()
-    if count <= 0 then
-        return 0
-    end
-
-    -- Mỗi người chơi chiếm 32px + 2px khoảng cách.
+    if count <= 0 then return 0 end
     return (count * PlayerListRowHeight) - 2
 end
 
 local function updatePlayerListLayout()
     if not originalPlayerListPositions then
         originalPlayerListPositions = {}
-
         for _, child in pairs(Slide1:GetChildren()) do
-            if child ~= SelectedLbl
-                and child ~= PlayerListToggle
-                and child ~= PlayerList
-                and child:IsA("GuiObject")
-                and child.Position.Y.Scale == 0
-                and child.Position.Y.Offset >= 100 then
-
+            if child ~= SelectedLbl and child ~= PlayerListToggle and child ~= PlayerList and child:IsA("GuiObject") and child.Position.Y.Scale == 0 and child.Position.Y.Offset >= 100 then
                 originalPlayerListPositions[child] = child.Position.Y.Offset
             end
         end
     end
 
     local listHeight = PlayerListOpen and getPlayerListHeight() or 0
-
     PlayerList.Size = UDim2.new(0.95, 0, 0, listHeight)
     PlayerList.Visible = PlayerListOpen
 
-    -- InputNameBox1 cũ bắt đầu ở Y=130.
-    -- Vị trí mới: ngay sau bảng người chơi + 5px.
     local newInputY = 75 + listHeight
     local offset = newInputY - 130
 
     for object, originalY in pairs(originalPlayerListPositions) do
         if object and object.Parent then
-            object.Position = UDim2.new(
-                object.Position.X.Scale,
-                object.Position.X.Offset,
-                object.Position.Y.Scale,
-                originalY + offset
-            )
+            object.Position = UDim2.new(object.Position.X.Scale, object.Position.X.Offset, object.Position.Y.Scale, originalY + offset)
         end
     end
 end
 
 local function updatePlayerList()
     for _, child in pairs(PlayerList:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+        if child:IsA("TextButton") then child:Destroy() end
     end
 
     for _, p in pairs(Players:GetPlayers()) do
@@ -737,16 +671,9 @@ local function updatePlayerList()
             corner.Parent = avatar
 
             local success, content = pcall(function()
-                return Players:GetUserThumbnailAsync(
-                    p.UserId,
-                    Enum.ThumbnailType.HeadShot,
-                    Enum.ThumbnailSize.Size48x48
-                )
+                return Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
             end)
-
-            if success and content then
-                avatar.Image = content
-            end
+            if success and content then avatar.Image = content end
 
             table.insert(registeredBorders, pBtn)
             table.insert(registeredTexts, nameLabel)
@@ -765,13 +692,7 @@ end
 
 PlayerListToggle.MouseButton1Click:Connect(function()
     PlayerListOpen = not PlayerListOpen
-
-    if PlayerListOpen then
-        PlayerListToggle.Text = "▼  Người chơi trong server"
-    else
-        PlayerListToggle.Text = "▶  Người chơi trong server"
-    end
-
+    PlayerListToggle.Text = PlayerListOpen and "▼  Người chơi trong server" or "▶  Người chơi trong server"
     updatePlayerListLayout()
 end)
 
@@ -785,7 +706,6 @@ Players.PlayerAdded:Connect(function()
     updatePlayerList()
     updatePlayerListLayout()
 end)
-
 Players.PlayerRemoving:Connect(function()
     task.defer(function()
         updatePlayerList()
@@ -831,14 +751,12 @@ local StandBehindButton, _, StandBehindFrame = createKeybindButton(Slide1, "Đ�
     StandBehindToggle = state
 end)
 
--- // CHỐNG GIẢM TỐC
 local AntiSlowToggle = false
 local antiSlowConnection = nil
 local antiSlowDefaultSpeed = 16
 
 createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     AntiSlowToggle = state
-
     if AntiSlowToggle then
         if not antiSlowConnection then
             antiSlowConnection = RunService.RenderStepped:Connect(function()
@@ -856,6 +774,7 @@ createKeybindButton(Slide1, "Chống giảm tốc", UDim2.new(0.025, 0, 0, 264),
         end
     end
 end)
+
 local DistBox = createStyledTextBox(Slide1, "4", UDim2.new(0.025, 0, 0, 297), UDim2.new(0.95, 0, 0, 22))
 DistBox.Text = "Khoảng cách: 4 studs (Nhấn để chỉnh)"
 DistBox.TextColor3 = Color3.fromRGB(0, 170, 255)
@@ -926,9 +845,7 @@ addParameterButton(StandBehindFrame, "Thông số • Đứng sau target", {{nam
 
 local function getTargetPlayer()
     local name = (modeOption == 1) and selectedPlayerName or InputNameBox1.Text
-    if name ~= "" then
-        return Players:FindFirstChild(name)
-    end
+    if name ~= "" then return Players:FindFirstChild(name) end
     return nil
 end
 
@@ -963,10 +880,10 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+updatePlayerListLayout()
+-- // Phần 3: Slide Movement
 local SlideMovement = createSlide("Movement")
 
-
--- 1. NÚT FLY (BAY TỰ DO TRÊN MOBILE VÀ PC)
 local flyToggle = false
 local flySpeed = 50
 local flyConnection = nil
@@ -1001,7 +918,6 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
 
             local camera = Workspace.CurrentCamera
             local moveVector = humanoid.MoveDirection
-
             bg.CFrame = camera.CFrame
 
             if moveVector.Magnitude > 0 then
@@ -1013,9 +929,7 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
                 local dotRight = moveVector:Dot(cameraCFrame.RightVector)
 
                 local flyDirection = (forwardVector * dotForward) + (rightVector * dotRight)
-                if flyDirection.Magnitude > 0 then
-                    flyDirection = flyDirection.Unit
-                end
+                if flyDirection.Magnitude > 0 then flyDirection = flyDirection.Unit end
 
                 bv.Velocity = flyDirection * flySpeed
             else
@@ -1023,25 +937,19 @@ local FlyButton, _, FlyFrame = createKeybindButton(SlideMovement, "Fly (Bay tự
             end
         end)
     else
-        if flyConnection then
-            flyConnection:Disconnect()
-            flyConnection = nil
-        end
+        if flyConnection then flyConnection:Disconnect() flyConnection = nil end
         if hrp then
             local oldBv = hrp:FindFirstChild("FlyVelocity")
             local oldBg = hrp:FindFirstChild("FlyGyro")
             if oldBv then oldBv:Destroy() end
             if oldBg then oldBg:Destroy() end
         end
-        if humanoid then
-            humanoid.PlatformStand = false
-        end
+        if humanoid then humanoid.PlatformStand = false end
     end
 end)
 
 addParameterButton(FlyFrame, "Thông số • Fly", {{name="Tốc độ bay", min=1, max=200, get=function() return flySpeed end, set=function(v) flySpeed = v end}})
 
--- 2. NÚT NOCLIP + SÀN GIẢ TÀNG HÌNH
 local noClipToggle = false
 local noClipConnection = nil
 local fakeFloor = nil
@@ -1053,9 +961,7 @@ createKeybindButton(SlideMovement, "NoClip (Xuyên tường + Sàn giả)", UDim
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
     if noClipToggle then
-        if hrp then
-            fixedY = hrp.Position.Y - 3.2
-        end
+        if hrp then fixedY = hrp.Position.Y - 3.2 end
 
         if not fakeFloor or not fakeFloor.Parent then
             fakeFloor = Instance.new("Part")
@@ -1088,25 +994,17 @@ createKeybindButton(SlideMovement, "NoClip (Xuyên tường + Sàn giả)", UDim
             end
         end)
     else
-        if noClipConnection then
-            noClipConnection:Disconnect()
-            noClipConnection = nil
-        end
-        if fakeFloor then
-            fakeFloor:Destroy()
-            fakeFloor = nil
-        end
+        if noClipConnection then noClipConnection:Disconnect() noClipConnection = nil end
+        if fakeFloor then fakeFloor:Destroy() fakeFloor = nil end
         fixedY = nil
     end
 end)
 
--- 3. NÚT ANTIFLING
 local antiFlingToggle = false
 local antiFlingConnection = nil
 
 createKeybindButton(SlideMovement, "AntiFling (Chống văng chuẩn)", UDim2.new(0.025, 0, 0, 110), UDim2.new(0.95, 0, 0, 35), nil, function(state)
     antiFlingToggle = state
-
     if antiFlingToggle then
         if not antiFlingConnection then
             antiFlingConnection = RunService.Heartbeat:Connect(function()
@@ -1122,14 +1020,10 @@ createKeybindButton(SlideMovement, "AntiFling (Chống văng chuẩn)", UDim2.ne
             end)
         end
     else
-        if antiFlingConnection then
-            antiFlingConnection:Disconnect()
-            antiFlingConnection = nil
-        end
+        if antiFlingConnection then antiFlingConnection:Disconnect() antiFlingConnection = nil end
     end
 end)
 
--- 4. NÚT AIR WALK
 local airWalkToggle = false
 local airWalkSpeed = 50
 local airWalkConnection = nil
@@ -1170,14 +1064,12 @@ end)
 
 addParameterButton(AirWalkFrame, "Thông số • Air Walk", {{name="Tốc độ", min=1, max=200, get=function() return airWalkSpeed end, set=function(v) airWalkSpeed = v end}})
 
--- 5. NÚT TỐC BIẾN (PHÍM R)
 local flashStepToggle = false
 local flashStepDistance = 100
 
 local function getMouseTargetPosition()
     local mousePos = UserInputService:GetMouseLocation()
     local ray = Workspace.CurrentCamera:ScreenPointToRay(mousePos.X, mousePos.Y)
-    
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     if LocalPlayer.Character then
@@ -1185,20 +1077,15 @@ local function getMouseTargetPosition()
     end
 
     local result = Workspace:Raycast(ray.Origin, ray.Direction * flashStepDistance, raycastParams)
-    if result then
-        return result.Position
-    else
-        return ray.Origin + (ray.Direction * flashStepDistance)
-    end
+    if result then return result.Position
+    else return ray.Origin + (ray.Direction * flashStepDistance) end
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    
     if flashStepToggle and input.KeyCode == Enum.KeyCode.R then
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        
         if hrp then
             local targetPos = getMouseTargetPosition()
             hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2.5, 0), targetPos)
@@ -1212,7 +1099,6 @@ end)
 
 addParameterButton(FlashStepFrame, "Thông số • Flash Step", {{name="Khoảng cách", min=1, max=500, get=function() return flashStepDistance end, set=function(v) flashStepDistance = v end}})
 
--- // TỐC ĐỘ CHẠY
 local SpeedToggle = false
 local speedValue = 32
 local speedMin, speedMax = 16, 200
@@ -1275,16 +1161,12 @@ end)
 
 SpeedBox.FocusLost:Connect(function()
     local num = tonumber(SpeedBox.Text:match("%d+%.?%d*"))
-    if num then
-        updateSpeedFromValue(num)
-    else
-        SpeedBox.Text = "Tốc độ: " .. tostring(speedValue) .. " (Nhấn để chỉnh)"
-    end
+    if num then updateSpeedFromValue(num)
+    else SpeedBox.Text = "Tốc độ: " .. tostring(speedValue) .. " (Nhấn để chỉnh)" end
 end)
 
 local SpeedButton, _, SpeedFrame = createKeybindButton(SlideMovement, "Tăng tốc độ", UDim2.new(0.025, 0, 0, 245), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     SpeedToggle = state
-
     if SpeedToggle then
         if not speedConnection then
             speedConnection = RunService.Heartbeat:Connect(function()
@@ -1302,9 +1184,7 @@ local SpeedButton, _, SpeedFrame = createKeybindButton(SlideMovement, "Tăng t�
         end
         local character = LocalPlayer.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = speedDefault
-        end
+        if humanoid then humanoid.WalkSpeed = speedDefault end
     end
 end)
 
@@ -1312,8 +1192,6 @@ SpeedBox.Visible = false
 SpeedSliderFrame.Visible = false
 addParameterButton(SpeedFrame, "Thông số • Tốc độ", {{name="Tốc độ", min=16, max=200, get=function() return speedValue end, set=function(v) updateSpeedFromValue(v) end}})
 
--- // DASH
--- Dash client-side: Q để kích hoạt, có cooldown và hiệu ứng FOV/trail.
 local DashToggle = false
 local dashCooldown = 0.75
 local dashDistance = 42
@@ -1321,52 +1199,37 @@ local dashDuration = 0.16
 local dashReady = true
 local dashKey = Enum.KeyCode.Q
 
-local DashButton, _, DashFrame = createKeybindButton(
-    SlideMovement,
-    "Dash (Q)",
-    UDim2.new(0.025, 0, 0, 278),
-    UDim2.new(0.95, 0, 0, 28),
-    nil,
-    function(state)
-        DashToggle = state
-    end
-)
+local DashButton, _, DashFrame = createKeybindButton(SlideMovement, "Dash (Q)", UDim2.new(0.025, 0, 0, 278), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    DashToggle = state
+end)
 
 addParameterButton(DashFrame, "Thông số • Dash", {{name="Khoảng cách", min=1, max=200, get=function() return dashDistance end, set=function(v) dashDistance = v end}, {name="Cooldown", min=0, max=10, get=function() return dashCooldown end, set=function(v) dashCooldown = v end}, {name="Thời gian", min=0.03, max=2, get=function() return dashDuration end, set=function(v) dashDuration = v end}})
 
 local function getDashDirection()
     local character = LocalPlayer.Character
     if not character then return nil end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local root = character:FindFirstChild("HumanoidRootPart")
     if not humanoid or not root then return nil end
 
     local moveDirection = humanoid.MoveDirection
-    if moveDirection.Magnitude > 0.05 then
-        return moveDirection.Unit
-    end
+    if moveDirection.Magnitude > 0.05 then return moveDirection.Unit end
 
     local camera = Workspace.CurrentCamera
     if camera then
         local look = camera.CFrame.LookVector
         local flatLook = Vector3.new(look.X, 0, look.Z)
-        if flatLook.Magnitude > 0.05 then
-            return flatLook.Unit
-        end
+        if flatLook.Magnitude > 0.05 then return flatLook.Unit end
     end
 
     local look = root.CFrame.LookVector
     local flatLook = Vector3.new(look.X, 0, look.Z)
-    if flatLook.Magnitude > 0.05 then
-        return flatLook.Unit
-    end
+    if flatLook.Magnitude > 0.05 then return flatLook.Unit end
 
     return nil
 end
 
 local function playDashEffect(character, root)
-    -- Trail ngắn tạo cảm giác chuyển động nhanh.
     local attachment0 = Instance.new("Attachment")
     attachment0.Name = "DashAttachment0"
     attachment0.Position = Vector3.new(0, 1, 0)
@@ -1390,17 +1253,12 @@ local function playDashEffect(character, root)
     })
     trail.Parent = root
 
-    -- Hiệu ứng FOV giống dash nhanh.
     local camera = Workspace.CurrentCamera
     local oldFov = camera and camera.FieldOfView or 70
-    if camera then
-        camera.FieldOfView = math.clamp(oldFov + 12, 1, 120)
-    end
+    if camera then camera.FieldOfView = math.clamp(oldFov + 12, 1, 120) end
 
     task.delay(dashDuration, function()
-        if camera and camera.Parent then
-            camera.FieldOfView = oldFov
-        end
+        if camera and camera.Parent then camera.FieldOfView = oldFov end
         if trail then trail:Destroy() end
         if attachment0 then attachment0:Destroy() end
         if attachment1 then attachment1:Destroy() end
@@ -1409,10 +1267,8 @@ end
 
 local function dash()
     if not DashToggle or not dashReady then return end
-
     local character = LocalPlayer.Character
     if not character then return end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local root = character:FindFirstChild("HumanoidRootPart")
     if not humanoid or not root or humanoid.Health <= 0 then return end
@@ -1423,17 +1279,12 @@ local function dash()
     dashReady = false
     playDashEffect(character, root)
 
-    -- Giữ vận tốc ngang để dash mượt và không ép nhân vật bay lên.
     local oldY = root.AssemblyLinearVelocity.Y
     local startTime = os.clock()
 
     while os.clock() - startTime < dashDuration do
         if not root.Parent or humanoid.Health <= 0 then break end
-        root.AssemblyLinearVelocity = Vector3.new(
-            direction.X * (dashDistance / dashDuration),
-            oldY,
-            direction.Z * (dashDistance / dashDuration)
-        )
+        root.AssemblyLinearVelocity = Vector3.new(direction.X * (dashDistance / dashDuration), oldY, direction.Z * (dashDistance / dashDuration))
         RunService.RenderStepped:Wait()
     end
 
@@ -1449,16 +1300,12 @@ end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == dashKey then
-        dash()
-    end
+    if input.KeyCode == dashKey then dash() end
 end)
-
--- // Cập nhật kích thước bảng người chơi lần đầu sau khi toàn bộ giao diện đã tạo xong
-updatePlayerListLayout()
-
+-- // Phần 4: Slide Visual
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
+
 local function updateESP()
     for _, p in pairs(Players:GetPlayers()) do
         if p.Character then
@@ -1507,7 +1354,6 @@ end)
 
 RunService.RenderStepped:Connect(function()
     if not TracerToggle then return end
-
     local Camera = Workspace.CurrentCamera
     local viewportSize = Camera.ViewportSize
     local shiftLockPos = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
@@ -1535,7 +1381,6 @@ RunService.RenderStepped:Connect(function()
 
             if hrp and char:FindFirstChildOfClass("Humanoid") and char.Humanoid.Health > 0 then
                 local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-
                 if onScreen then
                     drawGroup.Line.From = shiftLockPos
                     drawGroup.Line.To = Vector2.new(hrpPos.X, hrpPos.Y)
@@ -1640,32 +1485,24 @@ local isDraggingTranspSlider = false
 
 local function isPlayerPart(part)
     for _, p in pairs(Players:GetPlayers()) do
-        if p.Character and part:IsDescendantOf(p.Character) then
-            return true
-        end
+        if p.Character and part:IsDescendantOf(p.Character) then return true end
     end
     return false
 end
 
 local function applyXrayToPart(part)
     if part:IsA("BasePart") and not isPlayerPart(part) then
-        if not originalTranspMap[part] then
-            originalTranspMap[part] = part.Transparency
-        end
+        if not originalTranspMap[part] then originalTranspMap[part] = part.Transparency end
         part.Transparency = xrayTransparencyPct / 100
     end
 end
 
 local function updateXrayState()
     if XrayToggle then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            applyXrayToPart(obj)
-        end
+        for _, obj in pairs(Workspace:GetDescendants()) do applyXrayToPart(obj) end
     else
         for part, origTrans in pairs(originalTranspMap) do
-            if part and part.Parent then
-                part.Transparency = origTrans
-            end
+            if part and part.Parent then part.Transparency = origTrans end
         end
         originalTranspMap = {}
     end
@@ -1676,9 +1513,7 @@ local function updateTranspFromValue(val)
     xrayTransparencyPct = math.floor(val + 0.5)
     TranspSliderFill.Size = UDim2.new(xrayTransparencyPct / 100, 0, 1, 0)
     TranspBox.Text = "Độ mờ X-Ray: " .. tostring(xrayTransparencyPct) .. "% (Nhấn để chỉnh)"
-    if XrayToggle then
-        updateXrayState()
-    end
+    if XrayToggle then updateXrayState() end
 end
 
 local function updateTranspFromInput(input)
@@ -1708,17 +1543,13 @@ end)
 
 TranspBox.FocusLost:Connect(function()
     local num = tonumber(TranspBox.Text:match("%d+"))
-    if num then
-        updateTranspFromValue(num)
-    else
-        TranspBox.Text = "Độ mờ X-Ray: " .. tostring(xrayTransparencyPct) .. "% (Nhấn để chỉnh)"
-    end
+    if num then updateTranspFromValue(num)
+    else TranspBox.Text = "Độ mờ X-Ray: " .. tostring(xrayTransparencyPct) .. "% (Nhấn để chỉnh)" end
 end)
 
 local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2.new(0.025, 0, 0, 396), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     XrayToggle = state
     updateXrayState()
-
     if XrayToggle then
         if not xrayDescendantConnection then
             xrayDescendantConnection = Workspace.DescendantAdded:Connect(function(descendant)
@@ -1736,6 +1567,273 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
     end
 end)
 
+local currentTpMode = 1
+local savedPointSingle = nil
+local savedPointsList = {}
+
+local function createActionKeybindButton(parent, text, pos, size, defaultKey, onClickCallback)
+    size = size or UDim2.new(0.95, 0, 0, 30)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = size
+    mainFrame.Position = pos
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -42, 1, 0)
+    btn.Position = UDim2.new(0, 0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    btn.BorderSizePixel = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 13
+    btn.Parent = mainFrame
+
+    local keybindBox = Instance.new("TextButton")
+    keybindBox.Size = UDim2.new(0, 38, 1, 0)
+    keybindBox.Position = UDim2.new(1, -38, 0, 0)
+    keybindBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    keybindBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.BorderSizePixel = 1
+    keybindBox.Text = defaultKey and defaultKey.Name or "None"
+    keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+    keybindBox.Font = Enum.Font.SourceSansBold
+    keybindBox.TextSize = 12
+    keybindBox.Parent = mainFrame
+
+    table.insert(registeredBorders, btn)
+    table.insert(registeredBorders, keybindBox)
+    table.insert(registeredTexts, btn)
+
+    local currentKey = defaultKey
+    local isBinding = false
+
+    btn.MouseButton1Click:Connect(function()
+        if onClickCallback then onClickCallback() end
+    end)
+
+    keybindBox.MouseButton1Click:Connect(function()
+        isBinding = true
+        keybindBox.Text = "..."
+        keybindBox.TextColor3 = Color3.fromRGB(255, 255, 0)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if isBinding then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
+                    currentKey = nil
+                    keybindBox.Text = "None"
+                else
+                    currentKey = input.KeyCode
+                    keybindBox.Text = currentKey.Name
+                end
+                keybindBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+                isBinding = false
+            end
+        elseif not gameProcessed and currentKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
+            if onClickCallback then onClickCallback() end
+        end
+    end)
+
+    return btn, keybindBox, mainFrame
+end
+
+local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.95, 0, 0, 28))
+local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 489), UDim2.new(0.95, 0, 0, 28))
+
+ModeConfigBtn.MouseButton1Click:Connect(function()
+    openParameterPopup(MainFrame, "Chọn Mode Teleport", {
+        {
+            name = "Mode (1 hoặc 2):",
+            min = 1,
+            max = 2,
+            get = function() return currentTpMode end,
+            set = function(val)
+                currentTpMode = math.floor(val + 0.5)
+                if currentTpMode < 1 then currentTpMode = 1 end
+                if currentTpMode > 2 then currentTpMode = 2 end
+                ModeConfigBtn.Text = "Cài đặt Mode (Mode: " .. currentTpMode .. ")"
+            end
+        }
+    })
+end)
+
+local FloatingGui = Instance.new("ScreenGui")
+FloatingGui.Name = "CustomFloatingTeleportGui"
+FloatingGui.ResetOnSpawn = false
+FloatingGui.Enabled = false
+pcall(function() FloatingGui.Parent = CoreGui end)
+if not FloatingGui.Parent then FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local FloatMainFrame = Instance.new("Frame")
+FloatMainFrame.Size = UDim2.new(0, 230, 0, 270)
+FloatMainFrame.Position = UDim2.new(0.4, 0, 0.3, 0)
+FloatMainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+FloatMainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+FloatMainFrame.BorderSizePixel = 2
+FloatMainFrame.Active = true
+FloatMainFrame.Draggable = true
+FloatMainFrame.Parent = FloatingGui
+
+enableDragging(FloatMainFrame)
+
+local FloatTitle = Instance.new("TextLabel")
+FloatTitle.Size = UDim2.new(1, 0, 0, 30)
+FloatTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FloatTitle.BorderColor3 = Color3.fromRGB(0, 170, 255)
+FloatTitle.BorderSizePixel = 1
+FloatTitle.Text = "ĐIỀU HƯỚNG VỊ TRÍ"
+FloatTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+FloatTitle.Font = Enum.Font.SourceSansBold
+FloatTitle.TextSize = 14
+FloatTitle.Parent = FloatMainFrame
+
+local Mode1Container = Instance.new("Frame")
+Mode1Container.Size = UDim2.new(1, 0, 1, -30)
+Mode1Container.Position = UDim2.new(0, 0, 0, 30)
+Mode1Container.BackgroundTransparency = 1
+Mode1Container.Visible = true
+Mode1Container.Parent = FloatMainFrame
+
+local Mode2Container = Instance.new("Frame")
+Mode2Container.Size = UDim2.new(1, 0, 1, -30)
+Mode2Container.Position = UDim2.new(0, 0, 0, 30)
+Mode2Container.BackgroundTransparency = 1
+Mode2Container.Visible = false
+Mode2Container.Parent = FloatMainFrame
+
+local actionSaveFunc = function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        savedPointSingle = hrp.CFrame
+        if _G.UpdateTeleportBtnVisual then _G.UpdateTeleportBtnVisual(true) end
+    end
+end
+
+local actionTpFunc = function()
+    if savedPointSingle then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = savedPointSingle
+        end
+    end
+end
+
+local SavePosM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Lưu Vị Trí Hiện Tại", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, actionSaveFunc)
+local TeleportM1Btn, _, _ = createActionKeybindButton(Mode1Container, "Dịch Chuyển (Chưa lưu)", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, actionTpFunc)
+
+TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+_G.UpdateTeleportBtnVisual = function(isReady)
+    if isReady then
+        TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        TeleportM1Btn.BorderColor3 = Color3.fromRGB(0, 230, 255)
+        TeleportM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TeleportM1Btn.Text = "Dịch Chuyển Ngay (Sẵn Sàng)"
+    end
+end
+
+local SavePosM2Btn, _, _ = createActionKeybindButton(Mode2Container, "Lưu Vị Trí Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(savedPointsList, hrp.CFrame)
+        refreshPointsList()
+    end
+end)
+
+local PointsScrollingFrame = Instance.new("ScrollingFrame")
+PointsScrollingFrame.Size = UDim2.new(0.9, 0, 0.68, 0)
+PointsScrollingFrame.Position = UDim2.new(0.05, 0, 0.22, 0)
+PointsScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+PointsScrollingFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+PointsScrollingFrame.ScrollBarThickness = 4
+PointsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+PointsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PointsScrollingFrame.Parent = Mode2Container
+
+local PointsLayout = Instance.new("UIListLayout")
+PointsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PointsLayout.Padding = UDim.new(0, 4)
+PointsLayout.Parent = PointsScrollingFrame
+
+function refreshPointsList()
+    for _, child in ipairs(PointsScrollingFrame:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    
+    for index, pointCFrame in ipairs(savedPointsList) do
+        local pointItem = Instance.new("Frame")
+        pointItem.Size = UDim2.new(1, -4, 0, 28)
+        pointItem.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        pointItem.BorderColor3 = Color3.fromRGB(0, 170, 255)
+        pointItem.Parent = PointsScrollingFrame
+        
+        local gotoBtn = Instance.new("TextButton")
+        gotoBtn.Size = UDim2.new(1, -30, 1, 0)
+        gotoBtn.BackgroundTransparency = 1
+        gotoBtn.Text = "Điểm số " .. index
+        gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        gotoBtn.Font = Enum.Font.SourceSans
+        gotoBtn.TextSize = 12
+        gotoBtn.TextXAlignment = Enum.TextXAlignment.Left
+        gotoBtn.Parent = pointItem
+        
+        gotoBtn.MouseButton1Click:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = pointCFrame
+            end
+        end)
+        
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24)
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        deleteBtn.BorderColor3 = Color3.fromRGB(255, 0, 0)
+        deleteBtn.Text = "X"
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.Font = Enum.Font.SourceSansBold
+        deleteBtn.TextSize = 12
+        deleteBtn.Parent = pointItem
+        
+        deleteBtn.MouseButton1Click:Connect(function()
+            table.remove(savedPointsList, index)
+            refreshPointsList()
+        end)
+    end
+end
+
+local isFloatGuiOpen = false
+ToggleGuiBtn.MouseButton1Click:Connect(function()
+    isFloatGuiOpen = not isFloatGuiOpen
+    FloatingGui.Enabled = isFloatGuiOpen
+    
+    if isFloatGuiOpen then
+        ToggleGuiBtn.Text = "Đóng Bảng [-]"
+        ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        if currentTpMode == 1 then
+            Mode1Container.Visible = true
+            Mode2Container.Visible = false
+        else
+            Mode1Container.Visible = false
+            Mode2Container.Visible = true
+        end
+    else
+        ToggleGuiBtn.Text = "Mở Bảng Nổi [+]"
+        ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+-- // Phần 5: Slide Spawn, Scripts & Utility
+
+-- [Slide Spawn]
 local SlideSpawn = createSlide("Spawn")
 
 local SpawnBox = createStyledTextBox(SlideSpawn, "Nhập tên Model...", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 30))
@@ -1779,7 +1877,6 @@ end)
 DeleteModelBtn.MouseButton1Click:Connect(function()
     local name = SpawnBox.Text
     if name == "" then return end
-    
     for _, obj in pairs(Workspace:GetChildren()) do
         if obj:IsA("Model") and obj.Name == name then
             obj:Destroy()
@@ -1787,19 +1884,15 @@ DeleteModelBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // SLIDE SCRIPTS / FIX LAG
--- SlideFix bị thiếu khai báo nên các nút bên dưới không có parent.
+-- [Slide Scripts Hub]
 local SlideFix = createSlide("Scripts")
 
 local FixLagBtn = createStyledButton(SlideFix, "Chạy Code Fix Lag", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 35))
-
 FixLagBtn.MouseButton1Click:Connect(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/chillguy10012011-crypto/Nh-n-j/refs/heads/main/Fix%20lag"))()
     end)
 end)
-
-
 
 local LT2Btn = createStyledButton(SlideFix, "Chạy Script Kron Hub", UDim2.new(0.025, 0, 0, 65), UDim2.new(0.95, 0, 0, 35))
 LT2Btn.MouseButton1Click:Connect(function()
@@ -1815,7 +1908,7 @@ IYBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
-
+-- [Slide Utility & Settings Window]
 local SlideUtility = createSlide("Utility")
 
 local ResetAllBtn = createStyledButton(SlideUtility, "Reset all / Stop all", UDim2.new(0.025, 0, 0, 20), UDim2.new(0.95, 0, 0, 40))
@@ -1868,13 +1961,10 @@ end)
 local Info = createStyledButton(SlideUtility, "Test GUI mới • Reset All để tắt các toggle", UDim2.new(0.025, 0, 0, 75), UDim2.new(0.95, 0, 0, 35))
 Info.Active = false
 
-
 TranspBox.Visible = false
 TranspSliderFrame.Visible = false
 addParameterButton(XrayFrame, "Thông số • X-Ray", {{name="Độ mờ (%)", min=0, max=100, get=function() return xrayTransparencyPct end, set=function(v) updateTranspFromValue(v) end}})
 
--- // SETTINGS WINDOW ĐỘC LẬP
--- Cửa sổ này tách hoàn toàn khỏi MainFrame, có thể kéo thả riêng.
 local SettingsGui = Instance.new("ScreenGui")
 SettingsGui.Name = "ControlPanelSettings"
 SettingsGui.ResetOnSpawn = false
@@ -1964,7 +2054,6 @@ local function settingsButton(text)
     return btn
 end
 
--- STYLE
 settingsLabel("Kiểu dáng GUI")
 local StyleRow = Instance.new("Frame")
 StyleRow.Size = UDim2.new(1, -8, 0, 34)
@@ -2004,7 +2093,6 @@ Gui1StyleBtn.MouseButton1Click:Connect(function()
     setGuiStyle("GUI1")
 end)
 
--- MÀU GUI
 local colorList = {
     Color3.fromRGB(35, 35, 35), Color3.fromRGB(20, 20, 20), Color3.fromRGB(50, 50, 50),
     Color3.fromRGB(0, 170, 255), Color3.fromRGB(255, 85, 85), Color3.fromRGB(85, 255, 85),
@@ -2074,17 +2162,12 @@ SettingsWindowClose.MouseButton1Click:Connect(function()
     SettingsWindow.Visible = false
 end)
 
--- Dọn cửa sổ Settings cũ: không dùng nữa, chỉ giữ để tương thích với phần code theme cũ.
-SettingsPanel.Visible = false
-
--- // COMPACT LAYOUT
 local function compactContainer(container, topPadding, gap, skipHidden)
     topPadding = topPadding or 8
     gap = gap or 4
     local items = {}
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("GuiObject") and child.Position.Y.Scale == 0 then
-            -- Bỏ qua phần tử đang ẩn để không chừa khoảng trống
             if not (skipHidden and not child.Visible) then
                 table.insert(items, child)
             end
@@ -2109,10 +2192,8 @@ compactContainer(SlideSpawn, 8, 4, true)
 compactContainer(SlideFix, 8, 4, true)
 compactContainer(SlideUtility, 8, 4, true)
 
--- // MẶC ĐỊNH MỞ PLAYER
 for _, s in pairs(slides) do s.Visible = false end
 if slides["Player"] then slides["Player"].Visible = true end
-SettingsPanel.Visible = false
 SettingsWindow.Visible = false
 
 setGuiStyle("Default")
