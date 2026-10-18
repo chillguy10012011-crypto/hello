@@ -1,4 +1,4 @@
--- // PHẦN 1: ESP, TRACER, SHOW NAME & X-RAY
+-- // PHẦN 1: ESP, TRACER, SHOW NAME & X-RAY (An toàn tuyệt đối cho Mobile & PC)
 local VisualSlide = createSlide("Visual")
 local EspToggle = false
 
@@ -37,8 +37,10 @@ local tracerDrawings = {}
 
 local function clearTracers()
     for _, drawGroup in pairs(tracerDrawings) do
-        if drawGroup.Line then drawGroup.Line:Remove() end
-        if drawGroup.Box then drawGroup.Box:Remove() end
+        pcall(function()
+            if drawGroup.Line then drawGroup.Line:Remove() end
+            if drawGroup.Box then drawGroup.Box:Remove() end
+        end)
     end
     tracerDrawings = {}
 end
@@ -51,54 +53,65 @@ end)
 RunService.RenderStepped:Connect(function()
     if not TracerToggle then return end
     local Camera = Workspace.CurrentCamera
+    if not Camera then return end
     local viewportSize = Camera.ViewportSize
     local shiftLockPos = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
 
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             if not tracerDrawings[p] then
-                local line = Drawing.new("Line")
-                line.Color = Color3.fromRGB(255, 0, 0)
-                line.Thickness = 1.5
-                line.Transparency = 1
+                pcall(function()
+                    local line = Drawing.new("Line")
+                    line.Color = Color3.fromRGB(255, 0, 0)
+                    line.Thickness = 1.5
+                    line.Transparency = 1
 
-                local box = Drawing.new("Square")
-                box.Color = Color3.fromRGB(255, 0, 0)
-                box.Thickness = 1.5
-                box.Filled = false
-                box.Transparency = 1
+                    local box = Drawing.new("Square")
+                    box.Color = Color3.fromRGB(255, 0, 0)
+                    box.Thickness = 1.5
+                    box.Filled = false
+                    box.Transparency = 1
 
-                tracerDrawings[p] = {Line = line, Box = box}
+                    tracerDrawings[p] = {Line = line, Box = box}
+                end)
             end
 
             local drawGroup = tracerDrawings[p]
-            local char = p.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if drawGroup then
+                local char = p.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-            if hrp and char:FindFirstChildOfClass("Humanoid") and char.Humanoid.Health > 0 then
-                local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                if onScreen then
-                    drawGroup.Line.From = shiftLockPos
-                    drawGroup.Line.To = Vector2.new(hrpPos.X, hrpPos.Y)
-                    drawGroup.Line.Visible = true
+                if hrp and char:FindFirstChildOfClass("Humanoid") and char.Humanoid.Health > 0 then
+                    local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    if onScreen then
+                        pcall(function()
+                            drawGroup.Line.From = shiftLockPos
+                            drawGroup.Line.To = Vector2.new(hrpPos.X, hrpPos.Y)
+                            drawGroup.Line.Visible = true
 
-                    local head = char:FindFirstChild("Head")
-                    local headPos = head and Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0)) or hrpPos
-                    local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+                            local head = char:FindFirstChild("Head")
+                            local headPos = head and Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0)) or hrpPos
+                            local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
 
-                    local boxHeight = math.abs(headPos.Y - legPos.Y)
-                    local boxWidth = boxHeight * 0.65
+                            local boxHeight = math.abs(headPos.Y - legPos.Y)
+                            local boxWidth = boxHeight * 0.65
 
-                    drawGroup.Box.Size = Vector2.new(boxWidth, boxHeight)
-                    drawGroup.Box.Position = Vector2.new(hrpPos.X - boxWidth / 2, hrpPos.Y - boxHeight / 2)
-                    drawGroup.Box.Visible = true
+                            drawGroup.Box.Size = Vector2.new(boxWidth, boxHeight)
+                            drawGroup.Box.Position = Vector2.new(hrpPos.X - boxWidth / 2, hrpPos.Y - boxHeight / 2)
+                            drawGroup.Box.Visible = true
+                        end)
+                    else
+                        pcall(function()
+                            drawGroup.Line.Visible = false
+                            drawGroup.Box.Visible = false
+                        end)
+                    end
                 else
-                    drawGroup.Line.Visible = false
-                    drawGroup.Box.Visible = false
+                    pcall(function()
+                        drawGroup.Line.Visible = false
+                        drawGroup.Box.Visible = false
+                    end)
                 end
-            else
-                drawGroup.Line.Visible = false
-                drawGroup.Box.Visible = false
             end
         end
     end
@@ -106,8 +119,10 @@ end)
 
 Players.PlayerRemoving:Connect(function(p)
     if tracerDrawings[p] then
-        if tracerDrawings[p].Line then tracerDrawings[p].Line:Remove() end
-        if tracerDrawings[p].Box then tracerDrawings[p].Box:Remove() end
+        pcall(function()
+            if tracerDrawings[p].Line then tracerDrawings[p].Line:Remove() end
+            if tracerDrawings[p].Box then tracerDrawings[p].Box:Remove() end
+        end)
         tracerDrawings[p] = nil
     end
 end)
@@ -178,7 +193,6 @@ TranspSliderFill.BorderSizePixel = 0
 TranspSliderFill.Parent = TranspSliderFrame
 
 local isDraggingTranspSlider = false
-
 local function isPlayerPart(part)
     for _, p in pairs(Players:GetPlayers()) do
         if p.Character and part:IsDescendantOf(p.Character) then return true end
@@ -528,31 +542,36 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
--- // PHẦN 3: AIMLOCK THÔNG MINH
+-- // PHẦN 3: AIMLOCK THÔNG MINH (Đã bọc pcall chống sập mobile hoàn toàn)
 local AimlockToggle = false
 local aimlockHitbone = "Head"
 local aimlockFovSize = 100
 local aimlockLockTime = 0.5
 local aimlockAutoShoot = false
 
-local fovCircle = Drawing.new("Circle")
-fovCircle.Visible = false
-fovCircle.Radius = aimlockFovSize
-fovCircle.Color = Color3.fromRGB(0, 230, 255)
-fovCircle.Thickness = 1.5
-fovCircle.Filled = false
-fovCircle.Transparency = 0.8
+local fovCircle = nil
+pcall(function()
+    fovCircle = Drawing.new("Circle")
+    fovCircle.Visible = false
+    fovCircle.Radius = aimlockFovSize
+    fovCircle.Color = Color3.fromRGB(0, 230, 255)
+    fovCircle.Thickness = 1.5
+    fovCircle.Filled = false
+    fovCircle.Transparency = 0.8
+end)
 
 RunService.RenderStepped:Connect(function()
-    if AimlockToggle then
-        local camera = Workspace.CurrentCamera
-        if camera then
-            fovCircle.Position = camera.ViewportSize / 2
-            fovCircle.Visible = true
-            fovCircle.Radius = aimlockFovSize
-        end
-    else
-        fovCircle.Visible = false
+    if AimlockToggle and fovCircle then
+        pcall(function()
+            local camera = Workspace.CurrentCamera
+            if camera then
+                fovCircle.Position = camera.ViewportSize / 2
+                fovCircle.Visible = true
+                fovCircle.Radius = aimlockFovSize
+            end
+        end)
+    elseif fovCircle then
+        pcall(function() fovCircle.Visible = false end)
     end
 end)
 
@@ -585,6 +604,7 @@ end
 
 local function getBestTarget()
     local camera = Workspace.CurrentCamera
+    if not camera then return nil end
     local viewportCenter = camera.ViewportSize / 2
     local closestTarget = nil
     local shortestDist = aimlockFovSize
@@ -622,17 +642,19 @@ RunService.RenderStepped:Connect(function()
     if targetPart then
         local camera = Workspace.CurrentCamera
         if camera then
-            local currentCF = camera.CFrame
-            local targetCF = CFrame.new(currentCF.Position, targetPart.Position)
-            camera.CFrame = currentCF:Lerp(targetCF, math.clamp(RunService.RenderStepped:Wait() / aimlockLockTime, 0.05, 1))
+            pcall(function()
+                local currentCF = camera.CFrame
+                local targetCF = CFrame.new(currentCF.Position, targetPart.Position)
+                camera.CFrame = currentCF:Lerp(targetCF, math.clamp(RunService.RenderStepped:Wait() / aimlockLockTime, 0.05, 1))
 
-            if aimlockAutoShoot then
-                pcall(function()
-                    if mouse1click then
-                        mouse1click()
-                    end
-                end)
-            end
+                if aimlockAutoShoot then
+                    pcall(function()
+                        if mouse1click then
+                            mouse1click()
+                        end
+                    end)
+                end
+            end)
         end
     end
 end)
