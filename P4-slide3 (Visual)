@@ -512,5 +512,25 @@ function refreshPointsList()
         end)
     end
 end
-
--
+-- Nút Toggle mở/đóng bảng nổi kèm đổi icon [+] sang [-]
+local isFloatGuiOpen = false
+ToggleGuiBtn.MouseButton1Click:Connect(function()
+    isFloatGuiOpen = not isFloatGuiOpen
+    FloatingGui.Enabled = isFloatGuiOpen
+    
+    if isFloatGuiOpen then
+        ToggleGuiBtn.Text = "Đóng Bảng [-]"
+        ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        
+        if currentTpMode == 1 then
+            Mode1Container.Visible = true
+            Mode2Container.Visible = false
+        else
+            Mode1Container.Visible = false
+            Mode2Container.Visible = true
+        end
+    else
+        ToggleGuiBtn.Text = "Mở Bảng Nổi [+]"
+        ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
