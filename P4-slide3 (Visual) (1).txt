@@ -534,172 +534,178 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
--- // PHẦN 3: AIMLOCK THÔNG MINH + VÒNG TRÒN FOV & AUTO-SHOOT
-local aimlockToggle = false
-local aimlockFOV = 120 -- Bán kính vòng tròn FOV mặc định
-local aimlockTime = 1.5 -- Thời gian dịch chuyển tâm (giây)
-local aimlockTargetPart = "Head" -- Hoặc HumanoidRootPart, LeftLowerLeg...
-local aimlockAutoShoot = false
+-- // PHẦN 3: AIMLOCK + FOV NEON + AUTO-SHOOT
+local AimlockToggle = false
+local aimFovRadius = 150 -- Bán kính vòng neon
+local aimLockDuration = 1.5 -- Thời gian khóa mục tiêu (giây)
+local aimTargetPartMode = 1 -- 1: Thân (HRP), 2: Đầu (Head), 3: Chân (RightFoot/LeftFoot/Leg)
+local autoShootEnabled = 0 -- 0: Tắt, 1: Bật
 
--- 1. Tạo Vòng tròn FOV Neon hiển thị giữa màn hình
-local FovGui = Instance.new("ScreenGui")
-FovGui.Name = "CustomAimlockFovGui"
-FovGui.ResetOnSpawn = false
-FovGui.Enabled = false
-pcall(function() FovGui.Parent = CoreGui end)
-if not FovGui.Parent then FovGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+local lockedTargetPlayer = nil
+local lockStartTime = 0
 
-local FovCircleFrame = Instance.new("Frame")
-FovCircleFrame.Name = "FovCircle"
-FovCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-FovCircleFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-FovCircleFrame.Size = UDim2.new(0, aimlockFOV * 2, 0, aimlockFOV * 2)
-FovCircleFrame.BackgroundTransparency = 1
-FovCircleFrame.Parent = FovGui
+-- Tạo Vòng Tròn Neon (FOV Circle) bằng Drawing API
+local fovCircle = Drawing.new("Circle")
+fovCircle.Thickness = 2
+fovCircle.NumSides = 60
+fovCircle.Radius = aimFovRadius
+fovCircle.Filled = false
+fovCircle.Visible = false
+fovCircle.Color = Color3.fromRGB(0, 255, 230) -- Màu Neon sáng
+fovCircle.Transparency = 1
 
-local FovCorner = Instance.new("UICorner")
-FovCorner.CornerRadius = UDim.new(1, 0)
-FovCorner.Parent = FovCircleFrame
-
-local FovStroke = Instance.new("UIStroke")
-FovStroke.Color = Color3.fromRGB(0, 230, 255)
-FovStroke.Thickness = 1.5
-FovStroke.Parent = FovCircleFrame
-
--- 2. Tạo Nút Aimlock trong Slide Visual
-local AimlockBtn, _, AimlockFrame = createKeybindButton(
-    VisualSlide, 
-    "Aimlock thông minh", 
-    UDim2.new(0.025, 0, 0, 522), 
-    UDim2.new(0.95, 0, 0, 28), 
-    nil, 
-    function(state)
-        aimlockToggle = state
-        FovGui.Enabled = aimlockToggle
+-- Nút Aimlock Bật/Tắt kèm Keybind & Nút thông số 3 chấm (...)
+local AimlockButton, _, AimlockFrame = createKeybindButton(VisualSlide, "Aimlock (Lock Shiftlock)", UDim2.new(0.025, 0, 0, 522), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AimlockToggle = state
+    fovCircle.Visible = AimlockToggle
+    if not AimlockToggle then
+        lockedTargetPlayer = nil
     end
-)
+end)
 
--- 3. Bảng thông số (Nút 3 chấm) cho Aimlock
+-- Gán popup nút 3 chấm (...) cài đặt thông số
 addParameterButton(AimlockFrame, "Thông số • Aimlock", {
     {
-        name = "Bán kính FOV", 
-        min = 30, 
-        max = 400, 
-        get = function() return aimlockFOV end, 
-        set = function(v) 
-            aimlockFOV = v
-            FovCircleFrame.Size = UDim2.new(0, aimlockFOV * 2, 0, aimlockFOV * 2)
+        name = "Bán kính FOV (80-400):",
+        min = 80,
+        max = 400,
+        get = function() return aimFovRadius end,
+        set = function(v)
+            aimFovRadius = math.floor(v)
+            fovCircle.Radius = aimFovRadius
         end
     },
     {
-        name = "Thời gian khóa (s)", 
-        min = 0.1, 
-        max = 5, 
-        get = function() return aimlockTime end, 
-        set = function(v) aimlockTime = v end
+        name = "Thời gian khóa (0.5-5s):",
+        min = 0.5,
+        max = 5.0,
+        get = function() return aimLockDuration end,
+        set = function(v) aimLockDuration = v end
     },
     {
-        name = "Bộ phận (1:Đầu, 2:Thân)", 
-        min = 1, 
-        max = 2, 
-        get = function() return aimlockTargetPart == "Head" and 1 or 2 end, 
-        set = function(v) 
-            aimlockTargetPart = (math.floor(v + 0.5) == 1) and "Head" or "HumanoidRootPart"
-        end
+        name = "Bộ phận (1:Thân, 2:Đầu, 3:Chân):",
+        min = 1,
+        max = 3,
+        get = function() return aimTargetPartMode end,
+        set = function(v) aimTargetPartMode = math.floor(v + 0.5) end
     },
     {
-        name = "Tự động bắn (0:Tắt, 1:Bật)", 
-        min = 0, 
-        max = 1, 
-        get = function() return aimlockAutoShoot and 1 or 0 end, 
-        set = function(v) aimlockAutoShoot = (math.floor(v + 0.5) == 1) end
+        name = "Tự động bắn (0: Tắt, 1: Bật):",
+        min = 0,
+        max = 1,
+        get = function() return autoShootEnabled end,
+        set = function(v) autoShootEnabled = math.floor(v + 0.5) end
     }
 })
 
--- 4. Hàm kiểm tra vật cản (Wallcheck) & Lọc Team
-local function isValidTarget(targetPlayer)
-    if not targetPlayer or targetPlayer == LocalPlayer then return false end
-    
-    -- Lọc Team (Tránh bắn nhầm đồng đội)
-    if targetPlayer.Team and LocalPlayer.Team and targetPlayer.Team == LocalPlayer.Team then
-        return false
-    end
+-- Hàm kiểm tra vật cản che giữa camera/nhân vật và mục tiêu (Raycast check)
+local function isPartVisible(targetPart)
+    local Camera = Workspace.CurrentCamera
+    if not Camera or not targetPart then return false end
 
-    local char = targetPlayer.Character
-    if not char then return false end
-    
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return false end
-
-    local targetPart = char:FindFirstChild(aimlockTargetPart) or char:FindFirstChild("HumanoidRootPart")
-    if not targetPart then return false end
-
-    -- Wallcheck: Dùng Raycast kiểm tra xem có vật cản giữa camera và mục tiêu không
-    local camera = Workspace.CurrentCamera
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     
-    local filterList = {LocalPlayer.Character}
-    if char then table.insert(filterList, char) end
-    raycastParams.FilterDescendantsInstances = filterList
+    local ignoreList = {}
+    if LocalPlayer.Character then table.insert(ignoreList, LocalPlayer.Character) end
+    if targetPart.Parent then table.insert(ignoreList, targetPart.Parent) end
+    raycastParams.FilterDescendantsInstances = ignoreList
 
-    local origin = camera.CFrame.Position
-    local direction = (targetPart.Position - origin)
+    local origin = Camera.CFrame.Position
+    local direction = targetPart.Position - origin
     local result = Workspace:Raycast(origin, direction, raycastParams)
 
-    -- Nếu raycast không vướng gì (hoặc va chạm trực tiếp vào phần của địch) thì là sạch sẽ
-    if not result then
-        return true
-    end
-
-    return false
+    return result == nil -- Nếu không va chạm vào part khác thì coi như không bị che
 end
 
--- 5. Logic xử lý Aimlock liên tục theo khung hình
-RunService.RenderStepped:Connect(function()
-    if not aimlockToggle then return end
+-- Lấy part mục tiêu tùy theo mode chọn (Thân/Đầu/Chân)
+local function getTargetBodyPart(character)
+    if not character then return nil end
+    if aimTargetPartMode == 2 then
+        return character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
+    elseif aimTargetPartMode == 3 then
+        return character:FindFirstChild("RightLowerLeg") or character:FindFirstChild("Right Leg") or character:FindFirstChild("HumanoidRootPart")
+    else
+        return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    end
+end
 
-    local camera = Workspace.CurrentCamera
-    local viewportSize = camera.ViewportSize
-    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
-
+-- Tìm người chơi nằm trong vòng tròn FOV gần tâm nhất và không bị vật cản
+local function getClosestTargetInFOV(centerPos)
+    local Camera = Workspace.CurrentCamera
     local closestPlayer = nil
-    local shortestDist = aimlockFOV
+    local shortestDistance = aimFovRadius
 
-    -- Quét toàn bộ player trong server tìm mục tiêu gần tâm vòng tròn nhất
     for _, p in pairs(Players:GetPlayers()) do
-        if isValidTarget(p) then
-            local char = p.Character
-            local targetPart = char:FindFirstChild(aimlockTargetPart) or char:FindFirstChild("HumanoidRootPart")
-            
-            if targetPart then
-                local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-                if onScreen then
-                    local screenPos2D = Vector2.new(screenPos.X, screenPos.Y)
-                    local dist = (screenPos2D - screenCenter).Magnitude
+        if p ~= LocalPlayer and p.Character then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            local targetPart = getTargetBodyPart(p.Character)
 
-                    if dist < shortestDist then
-                        shortestDist = dist
-                        closestPlayer = p
+            if hum and hum.Health > 0 and targetPart then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                if onScreen then
+                    local distToCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerPos).Magnitude
+                    if distToCenter <= shortestDistance then
+                        if isPartVisible(targetPart) then
+                            shortestDistance = distToCenter
+                            closestPlayer = p
+                        end
                     end
                 end
             end
         end
     end
+    return closestPlayer
+end
 
-    -- Nếu tìm thấy mục tiêu hợp lệ trong tầm FOV
-    if closestPlayer and closestPlayer.Character then
-        local targetPart = closestPlayer.Character:FindFirstChild(aimlockTargetPart) or closestPlayer.Character:FindFirstChild("HumanoidRootPart")
+-- Vòng lặp cập nhật Aimlock + Auto-Shoot liên tục
+RunService.RenderStepped:Connect(function()
+    if not AimlockToggle then return end
+
+    local Camera = Workspace.CurrentCamera
+    local viewportSize = Camera.ViewportSize
+    local shiftLockPos = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+
+    -- Cập nhật vị trí vòng neon theo tâm màn hình (Center / Shiftlock pos)
+    fovCircle.Position = shiftLockPos
+    fovCircle.Radius = aimFovRadius
+
+    local now = os.clock()
+
+    -- Bỏ lock nếu hết thời gian giữ (Duration) hoặc mục tiêu đã chết / khuất tầm nhìn
+    if lockedTargetPlayer then
+        local targetChar = lockedTargetPlayer.Character
+        local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+        local targetPart = getTargetBodyPart(targetChar)
+
+        if not targetHum or targetHum.Health <= 0 or not targetPart or not isPartVisible(targetPart) or (now - lockStartTime > aimLockDuration) then
+            lockedTargetPlayer = nil
+        end
+    end
+
+    -- Nếu chưa có target thì tiến hành quét tìm mục tiêu mới
+    if not lockedTargetPlayer then
+        local newTarget = getClosestTargetInFOV(shiftLockPos)
+        if newTarget then
+            lockedTargetPlayer = newTarget
+            lockStartTime = now
+        end
+    end
+
+    -- Thực hiện khóa tâm Shiftlock / Camera vào mục tiêu
+    if lockedTargetPlayer and lockedTargetPlayer.Character then
+        local targetPart = getTargetBodyPart(lockedTargetPlayer.Character)
         if targetPart then
-            local targetCFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
-            
-            -- Xoay camera mượt mà theo thời gian (aimlockTime)
-            camera.CFrame = camera.CFrame:Lerp(targetCFrame, math.clamp(RunService.RenderStepped:Wait() * (10 / aimlockTime), 0.05, 1))
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
 
-            -- Tính năng Auto-shoot tự động kích hoạt chuột trái nếu bật
-            if aimlockAutoShoot then
+            -- Xử lý Tự động bắn (Auto Shoot)
+            if autoShootEnabled == 1 then
                 pcall(function()
-                    mouse1click() -- Một số executor hỗ trợ giả lập click chuột tự động
+                    local char = LocalPlayer.Character
+                    local tool = char and char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
                 end)
             end
         end
