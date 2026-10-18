@@ -262,16 +262,14 @@ local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2
         end
     end
 end)
--- // PHẦN 5: SLIDE VISUAL (Phần 2: Quản lý Vị Trí & Bảng Nổi - Chỉnh lại 2 nút full chiều rộng cho đỡ OCD)
-local currentTpMode = 1 -- Mặc định mode 1
+-- // PHẦN 2: QUẢN LÝ VỊ TRÍ & BẢNG NỔI (Tích hợp Keybind Button)
+local currentTpMode = 1
 local savedPointSingle = nil
 local savedPointsList = {}
 
--- 2 nút xếp dọc, kéo dài full chiều rộng bằng các nút khác (0.95)
 local ModeConfigBtn = createStyledButton(VisualSlide, "Cài đặt Mode (Mode: 1)", UDim2.new(0.025, 0, 0, 456), UDim2.new(0.95, 0, 0, 28))
 local ToggleGuiBtn = createStyledButton(VisualSlide, "Mở Bảng Nổi [+] ", UDim2.new(0.025, 0, 0, 489), UDim2.new(0.95, 0, 0, 28))
 
--- Popup chỉnh thông số Mode (dùng hàm chuẩn của GUI gốc)
 ModeConfigBtn.MouseButton1Click:Connect(function()
     openParameterPopup(MainFrame, "Chọn Mode Teleport", {
         {
@@ -289,7 +287,7 @@ ModeConfigBtn.MouseButton1Click:Connect(function()
     })
 end)
 
--- Tạo GUI nổi trên màn hình khi bấm dấu [+]
+-- Tạo GUI nổi trên màn hình
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "CustomFloatingTeleportGui"
 FloatingGui.ResetOnSpawn = false
@@ -298,7 +296,7 @@ pcall(function() FloatingGui.Parent = CoreGui end)
 if not FloatingGui.Parent then FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 local FloatMainFrame = Instance.new("Frame")
-FloatMainFrame.Size = UDim2.new(0, 220, 0, 260)
+FloatMainFrame.Size = UDim2.new(0, 230, 0, 270)
 FloatMainFrame.Position = UDim2.new(0.4, 0, 0.3, 0)
 FloatMainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 FloatMainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
@@ -306,6 +304,8 @@ FloatMainFrame.BorderSizePixel = 2
 FloatMainFrame.Active = true
 FloatMainFrame.Draggable = true
 FloatMainFrame.Parent = FloatingGui
+
+enableDragging(FloatMainFrame)
 
 local FloatTitle = Instance.new("TextLabel")
 FloatTitle.Size = UDim2.new(1, 0, 0, 30)
@@ -318,7 +318,7 @@ FloatTitle.Font = Enum.Font.SourceSansBold
 FloatTitle.TextSize = 14
 FloatTitle.Parent = FloatMainFrame
 
--- Container Mode 1
+-- Container Mode 1 & 2
 local Mode1Container = Instance.new("Frame")
 Mode1Container.Size = UDim2.new(1, 0, 1, -30)
 Mode1Container.Position = UDim2.new(0, 0, 0, 30)
@@ -326,7 +326,6 @@ Mode1Container.BackgroundTransparency = 1
 Mode1Container.Visible = true
 Mode1Container.Parent = FloatMainFrame
 
--- Container Mode 2
 local Mode2Container = Instance.new("Frame")
 Mode2Container.Size = UDim2.new(1, 0, 1, -30)
 Mode2Container.Position = UDim2.new(0, 0, 0, 30)
@@ -334,35 +333,12 @@ Mode2Container.BackgroundTransparency = 1
 Mode2Container.Visible = false
 Mode2Container.Parent = FloatMainFrame
 
--- --- NỘI DUNG MODE 1 ---
-local SavePosM1Btn = Instance.new("TextButton")
-SavePosM1Btn.Size = UDim2.new(0.9, 0, 0, 35)
-SavePosM1Btn.Position = UDim2.new(0.05, 0, 0.1, 0)
-SavePosM1Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SavePosM1Btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
-SavePosM1Btn.Text = "Lưu Vị Trí Hiện Tại"
-SavePosM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SavePosM1Btn.Font = Enum.Font.SourceSansBold
-SavePosM1Btn.TextSize = 13
-SavePosM1Btn.Parent = Mode1Container
-
-local TeleportM1Btn = Instance.new("TextButton")
-TeleportM1Btn.Size = UDim2.new(0.9, 0, 0, 45)
-TeleportM1Btn.Position = UDim2.new(0.05, 0, 0.35, 0)
-TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Ban đầu tối (chưa sẵn sàng)
-TeleportM1Btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-TeleportM1Btn.Text = "Dịch Chuyển (Chưa lưu)"
-TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-TeleportM1Btn.Font = Enum.Font.SourceSansBold
-TeleportM1Btn.TextSize = 14
-TeleportM1Btn.Parent = Mode1Container
-
-SavePosM1Btn.MouseButton1Click:Connect(function()
+-- --- NỘI DUNG MODE 1 (Dùng createKeybindButton) ---
+local saveKeybindBtn, _, _ = createKeybindButton(Mode1Container, "Lưu Vị Trí", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 32), nil, function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         savedPointSingle = hrp.CFrame
-        -- Sáng nút dịch chuyển lên khi đã lưu
         TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
         TeleportM1Btn.BorderColor3 = Color3.fromRGB(0, 230, 255)
         TeleportM1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -370,7 +346,7 @@ SavePosM1Btn.MouseButton1Click:Connect(function()
     end
 end)
 
-TeleportM1Btn.MouseButton1Click:Connect(function()
+local TeleportM1Btn, _, _ = createKeybindButton(Mode1Container, "Dịch Chuyển", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.9, 0, 0, 38), nil, function()
     if savedPointSingle then
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -379,21 +355,21 @@ TeleportM1Btn.MouseButton1Click:Connect(function()
         end
     end
 end)
+TeleportM1Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TeleportM1Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
 
 -- --- NỘI DUNG MODE 2 ---
-local SavePosM2Btn = Instance.new("TextButton")
-SavePosM2Btn.Size = UDim2.new(0.9, 0, 0, 30)
-SavePosM2Btn.Position = UDim2.new(0.05, 0, 0.05, 0)
-SavePosM2Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SavePosM2Btn.BorderColor3 = Color3.fromRGB(0, 170, 255)
-SavePosM2Btn.Text = "Lưu Vị Trí Mới (+)"
-SavePosM2Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SavePosM2Btn.Font = Enum.Font.SourceSansBold
-SavePosM2Btn.TextSize = 12
-SavePosM2Btn.Parent = Mode2Container
+local saveMultiKeyBtn, _, _ = createKeybindButton(Mode2Container, "Lưu Mốc Mới (+)", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 30), nil, function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(savedPointsList, hrp.CFrame)
+        refreshPointsList()
+    end
+end)
 
 local PointsScrollingFrame = Instance.new("ScrollingFrame")
-PointsScrollingFrame.Size = UDim2.new(0.9, 0, 0.7, 0)
+PointsScrollingFrame.Size = UDim2.new(0.9, 0, 0.68, 0)
 PointsScrollingFrame.Position = UDim2.new(0.05, 0, 0.22, 0)
 PointsScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 PointsScrollingFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
@@ -407,7 +383,7 @@ PointsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 PointsLayout.Padding = UDim.new(0, 4)
 PointsLayout.Parent = PointsScrollingFrame
 
-local function refreshPointsList()
+function refreshPointsList()
     for _, child in ipairs(PointsScrollingFrame:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
     end
@@ -455,15 +431,6 @@ local function refreshPointsList()
     end
 end
 
-SavePosM2Btn.MouseButton1Click:Connect(function()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        table.insert(savedPointsList, hrp.CFrame)
-        refreshPointsList()
-    end
-end)
-
 -- Nút Toggle mở/đóng bảng nổi kèm đổi icon [+] sang [-]
 local isFloatGuiOpen = false
 ToggleGuiBtn.MouseButton1Click:Connect(function()
@@ -474,7 +441,6 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.Text = "Đóng Bảng [-]"
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         
-        -- Hiển thị đúng container theo Mode đang chọn
         if currentTpMode == 1 then
             Mode1Container.Visible = true
             Mode2Container.Visible = false
