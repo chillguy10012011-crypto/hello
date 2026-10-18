@@ -544,19 +544,19 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
--- // PHẦN 3: TÍNH NĂNG AIMBOT THÔNG MINH (Vòng tròn FOV, Raycast, Khóa & Tự động bắn)
+-- // PHẦN 3: TÍNH NĂNG AIMBOT THÔNG MINH (Tối ưu riêng cho Mobile / Executor di động)
 local aimbotToggle = false
-local aimbotFovRadius = 150
+local aimbotFovRadius = 120
 local aimbotLockDuration = 1.5
-local aimbotAutoShoot = 0 -- 0: Tắt, 1: Bật
+local aimbotAutoShoot = 0 -- 0: Tắt, 1: Bật (Tự động chạm màn hình trên mobile)
 local lockTimer = 0
 local currentLockedTarget = nil
 
--- Tạo vòng tròn FOV neon ở giữa màn hình (lấy tâm màn hình / shiftlock)
+-- Tạo vòng tròn FOV an toàn trên mobile
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Thickness = 1.5
-fovCircle.NumSides = 64
+fovCircle.NumSides = 32
 fovCircle.Radius = aimbotFovRadius
 fovCircle.Color = Color3.fromRGB(0, 170, 255)
 fovCircle.Filled = false
@@ -572,15 +572,14 @@ local AimbotBtn, _, AimbotFrame = createKeybindButton(VisualSlide, "Aimbot Thôn
 end)
 
 addParameterButton(AimbotFrame, "Thông số • Aimbot", {
-    {name="Bán kính FOV", min=50, max=400, get=function() return aimbotFovRadius end, set=function(v) 
+    {name="Bán kính FOV", min=30, max=300, get=function() return aimbotFovRadius end, set=function(v) 
         aimbotFovRadius = v 
         fovCircle.Radius = v
     end},
     {name="Thời gian khóa (s)", min=0.5, max=5, get=function() return aimbotLockDuration end, set=function(v) aimbotLockDuration = v end},
-    {name="Tự động bắn (0/1)", min=0, max=1, get=function() return aimbotAutoShoot end, set=function(v) aimbotAutoShoot = math.floor(v + 0.5) end}
+    {name="Tự bắn (0/1)", min=0, max=1, get=function() return aimbotAutoShoot end, set=function(v) aimbotAutoShoot = math.floor(v + 0.5) end}
 })
 
--- Hàm kiểm tra Line ofSight (xem có bị tường/part chắn giữa tâm và mục tiêu không)
 local function isLineOfSightClear(targetPart)
     local camera = Workspace.CurrentCamera
     if not camera or not targetPart then return false end
@@ -619,24 +618,24 @@ RunService.RenderStepped:Connect(function(dt)
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         
         if hrp then
-            -- Nếu đang khóa mục tiêu hợp lệ
             if currentLockedTarget and currentLockedTarget.Parent and currentLockedTarget.Parent:FindFirstChildOfClass("Humanoid") and currentLockedTarget.Parent.Humanoid.Health > 0 then
                 lockTimer = lockTimer - dt
                 if lockTimer <= 0 or not isLineOfSightClear(currentLockedTarget) then
                     currentLockedTarget = nil
                 else
-                    -- Khóa camera vào vị trí người chơi đối thủ
                     camera.CFrame = CFrame.new(camera.CFrame.Position, currentLockedTarget.Position)
                     
-                    -- Tự động kích hoạt bắn nếu bật
+                    -- Cơ chế mô phỏng tự bắn an toàn cho mobile (nếu game hỗ trợ tool click)
                     if aimbotAutoShoot == 1 then
                         pcall(function()
-                            mouse1click()
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            if tool then
+                                tool:Activate()
+                            end
                         end)
                     end
                 end
             else
-                -- Quét tìm mục tiêu mới trong bán kính FOV và không bị part chắn
                 local closestDist = aimbotFovRadius
                 local bestTarget = nil
                 
