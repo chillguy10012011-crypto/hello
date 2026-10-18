@@ -1831,6 +1831,165 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
+-- // ==========================================
+-- // CHỨC NĂNG AIMBOT (Tích hợp vào Slide Visual)
+-- // ==========================================
+
+local AimbotToggle = false
+local aimbotFovRadius = 120 -- Bán kính vòng tròn FOV mặc định
+local aimbotLockDuration = 1.5 -- Thời gian khóa mục tiêu (giây)
+local aimbotTargetPartName = "Head" -- Mặc định ngắm vào Đầu ("Head" hoặc "HumanoidRootPart")
+local aimbotAutoShoot = false -- Bật/tắt tự động bắn
+
+local aimbotLockedTarget = nil
+local aimbotLockTimer = 0
+
+-- 1. Tạo vòng tròn FOV dạng Neon (Drawing API)
+local fovCircle = Drawing.new("Circle")
+fovCircle.Visible = false
+fovCircle.Transparency = 0.8
+fovCircle.Thickness = 2
+fovCircle.Color = Color3.fromRGB(0, 170, 255)
+fovCircle.Filled = false
+fovCircle.Radius = aimbotFovRadius
+
+-- 2. Tạo nút Bật/Tắt Aimbot trong VisualSlide
+local AimbotButton, _, AimbotFrame = createKeybindButton(VisualSlide, "Aimbot (Khóa tâm + FOV)", UDim2.new(0.025, 0, 0, 522), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+    AimbotToggle = state
+    fovCircle.Visible = AimbotToggle
+    if not AimbotToggle then
+        aimbotLockedTarget = nil
+        aimbotLockTimer = 0
+    end
+end)
+
+-- 3. Tạo nút 3 chấm chỉnh thông số Aimbot
+addParameterButton(AimbotFrame, "Thông số • Aimbot", {
+    {
+        name = "Bán kính FOV",
+        min = 20,
+        max = 400,
+        get = function() return aimbotFovRadius end,
+        set = function(v)
+            aimbotFovRadius = v
+            fovCircle.Radius = v
+        end
+    },
+    {
+        name = "Thời gian khóa (s)",
+        min = 0.1,
+        max = 5.0,
+        get = function() return aimbotLockDuration end,
+        set = function(v) aimbotLockDuration = v end
+    },
+    {
+        name = "Ngắm (1:Đầu, 2:Thân)",
+        min = 1,
+        max = 2,
+        get = function() return (aimbotTargetPartName == "Head" and 1 or 2) end,
+        set = function(v)
+            if math.floor(v + 0.5) == 1 then
+                aimbotTargetPartName = "Head"
+            else
+                aimbotTargetPartName = "HumanoidRootPart"
+            end
+        end
+    },
+    {
+        name = "Tự bắn (0:Off, 1:On)",
+        min = 0,
+        max = 1,
+        get = function() return (aimbotAutoShoot and 1 or 0) end,
+        set = function(v) aimbotAutoShoot = (math.floor(v + 0.5) == 1) end
+    }
+})
+
+-- 4. Hàm kiểm tra không bị Part chắn (Raycast check visibility)
+local function isVisible(targetPart)
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("Head") then return false end
+    
+    local origin = character.Head.Position
+    local direction = (targetPart.Position - origin)
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
+    
+    local result = Workspace:Raycast(origin, direction, raycastParams)
+    return result == nil -- Nếu không vướng vật cản trả về true
+end
+
+-- 5. Xử lý logic vòng lặp Aimbot (RenderStepped)
+RunService.RenderStepped:Connect(function(dt)
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+    
+    -- Cập nhật vị trí vòng tròn FOV ở giữa màn hình (tâm Shiftlock)
+    local viewportSize = camera.ViewportSize
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    fovCircle.Position = screenCenter
+    
+    if not AimbotToggle then return end
+    
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    -- Xử lý thời gian khóa mục tiêu
+    if aimbotLockedTarget then
+        aimbotLockTimer = aimbotLockTimer - dt
+        local targetChar = aimbotLockedTarget.Character
+        local targetPart = targetChar and targetChar:FindFirstChild(aimbotTargetPartName)
+        
+        if not targetChar or not targetPart or not targetChar:FindFirstChildOfClass("Humanoid") or targetChar.Humanoid.Health <= 0 or aimbotLockTimer <= 0 then
+            aimbotLockedTarget = nil
+        else
+            -- Khóa camera/tâm nhìn vào mục tiêu
+            camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
+            
+            -- Tự động bắn nếu bật tính năng
+            if aimbotAutoShoot and isVisible(targetPart) then
+                pcall(function()
+                    mouse1click() -- Giả lập click chuột bắn trên executor hỗ trợ
+                end)
+            end
+            return
+        end
+    end
+    
+    -- Quét tìm mục tiêu mới trong bán kính FOV
+    local closestPlayer = nil
+    local shortestDist = aimbotFovRadius
+    
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
+            local targetPart = p.Character:FindFirstChild(aimbotTargetPartName)
+            
+            if humanoid and humanoid.Health > 0 and targetPart then
+                -- Kiểm tra xem có bị part chắn không
+                if isVisible(targetPart) then
+                    local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local screenPoint2D = Vector2.new(screenPos.X, screenPos.Y)
+                        local dist = (screenPoint2D - screenCenter).Magnitude
+                        
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            closestPlayer = p
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    if closestPlayer then
+        aimbotLockedTarget = closestPlayer
+        aimbotLockTimer = aimbotLockDuration
+    end
+end)
+
 -- // Phần 5: Slide Spawn, Scripts & Utility
 
 -- [Slide Spawn]
