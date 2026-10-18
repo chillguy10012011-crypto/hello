@@ -31,9 +31,25 @@ if compiledCode ~= "" then
     if runFunc then
         local success, execErr = pcall(runFunc)
         if not success then
-            warn("Lỗi khi chạy code tổng: " .. tostring(execErr))
+            local errorMsg = "Lỗi khi chạy code tổng: " .. tostring(execErr)
+            warn(errorMsg)
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Lỗi Script",
+                    Text = tostring(execErr),
+                    Duration = 10
+                })
+            end)
         end
     else
-        warn("Lỗi biên dịch code tổng: " .. tostring(err))
+        local compileMsg = "Lỗi biên dịch code tổng: " .. tostring(err)
+        warn(compileMsg)
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Lỗi Biên Dịch",
+                Text = tostring(err),
+                Duration = 10
+            })
+        end)
     end
 end
