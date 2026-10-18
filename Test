@@ -178,7 +178,6 @@ TranspSliderFill.BorderSizePixel = 0
 TranspSliderFill.Parent = TranspSliderFrame
 
 local isDraggingTranspSlider = false
-
 local function isPlayerPart(part)
     for _, p in pairs(Players:GetPlayers()) do
         if p.Character and part:IsDescendantOf(p.Character) then return true end
@@ -243,7 +242,7 @@ TranspBox.FocusLost:Connect(function()
     else TranspBox.Text = "Độ mờ X-Ray: " .. tostring(xrayTransparencyPct) .. "% (Nhấn để chỉnh)" end
 end)
 
-local XrayButton, _, XrayFrame = createKeybindButton(VisualSlide, "X-ray", UDim2.new(0.025, 0, 0, 155), UDim2.new(0.95, 0, 0, 28), nil, function(state)
+createKeybindButton(VisualSlide, "X-ray", UDim2.new(0.025, 0, 0, 155), UDim2.new(0.95, 0, 0, 28), nil, function(state)
     XrayToggle = state
     updateXrayState()
     if XrayToggle then
@@ -528,7 +527,7 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
         ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
--- // PHẦN 3: AIMLOCK TOÀN DIỆN (An toàn tuyệt đối cho Mobile & PC)
+-- // PHẦN 3: AIMLOCK THÔNG MINH (Đã cô lập lỗi, chạy mượt cả Mobile & PC)
 local AimlockToggle = false
 local aimlockHitbone = "Head"
 local aimlockFovSize = 100
