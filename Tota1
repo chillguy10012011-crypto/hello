@@ -1,4 +1,4 @@
--- Danh sách các link chứa các loadstring nhỏ của bạn
+1-- Danh sách các link chứa các loadstring nhỏ của bạn
 local moduleLinks = {
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P1-GUI",
     "https://raw.githubusercontent.com/chillguy10012011-crypto/hello/refs/heads/main/P2-slide1 (Player)",
